@@ -2,6 +2,8 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>Recepción de Certificados</title>
 
 <!-- Google Fonts -->
@@ -20,15 +22,15 @@
         padding: 20px;
         color: white;
         text-align: center;
-        font-size: 26px;
+        font-size: 28px;
         font-weight: 600;
         box-shadow: 0 3px 6px rgba(0,0,0,0.1);
     }
 
     .container {
-        width: 90%;
+        width: 95%;
         max-width: 900px;
-        margin: 30px auto;
+        margin: 25px auto;
         background: white;
         padding: 25px;
         border-radius: 12px;
@@ -37,18 +39,18 @@
 
     label {
         font-weight: 600;
-        margin-top: 10px;
+        margin-top: 12px;
         display: block;
         color: #333;
     }
 
     select, input, textarea {
         width: 100%;
-        padding: 10px;
-        border-radius: 8px;
+        padding: 12px;
+        border-radius: 9px;
         border: 1px solid #ccc;
         margin-top: 5px;
-        font-size: 16px;
+        font-size: 17px;
         box-sizing: border-box;
     }
 
@@ -56,11 +58,12 @@
         background: #4c6ef5;
         border: none;
         color: white;
-        padding: 12px 25px;
+        padding: 14px 25px;
         margin-top: 20px;
         border-radius: 8px;
-        font-size: 16px;
+        font-size: 18px;
         cursor: pointer;
+        width: 100%;
         transition: .2s;
     }
 
@@ -71,18 +74,12 @@
     .day-row {
         background: #f8f9ff;
         padding: 15px;
-        margin-top: 10px;
+        margin-top: 12px;
         border-radius: 10px;
         border: 1px solid #d0d4ea;
         display: flex;
         flex-direction: column;
         transition: 0.2s;
-    }
-
-    .day-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
     }
 
     .day-row.selected {
@@ -92,21 +89,55 @@
 
     .inputs {
         display: flex;
+        flex-direction: row;
         gap: 10px;
         margin-top: 10px;
     }
 
     .inputs textarea {
         width: 100%;
-        height: 70px;
+        height: 75px;
         resize: none;
     }
 
-    #observaciones {
-        margin-top: 15px;
-        height: 120px;
-    }
+    /* 📱 OPTIMIZACIÓN PARA CELULARES */
+    @media (max-width: 600px) {
 
+        header {
+            font-size: 22px;
+            padding: 15px;
+        }
+
+        .container {
+            padding: 18px;
+            border-radius: 10px;
+            width: 95%;
+        }
+
+        select, input, textarea {
+            padding: 14px;
+            font-size: 18px;
+        }
+
+        button {
+            padding: 15px;
+            font-size: 20px;
+        }
+
+        .day-row {
+            padding: 18px;
+            border-radius: 12px;
+        }
+
+        .inputs {
+            flex-direction: column; /* 📌 En móvil se apilan para más comodidad */
+        }
+
+        .inputs textarea {
+            height: 90px;
+            font-size: 17px;
+        }
+    }
 </style>
 </head>
 <body>
@@ -162,9 +193,11 @@
         const month = parseInt(document.getElementById("selectMonth").value);
 
         const contenedor = document.getElementById("contenedorDias");
-        contenedor.innerHTML = "";
+        contenedor.innerinnerHTML = "";
 
         const numDias = new Date(year, month, 0).getDate();
+
+        contenedor.innerHTML = ""; 
 
         for (let d = 1; d <= numDias; d++) {
             const div = document.createElement("div");
@@ -174,10 +207,7 @@
             const fecha = `${d}/${month}/${year}`;
 
             div.innerHTML = `
-                <div class="day-header">
-                    <strong>${fecha}</strong>
-                </div>
-
+                <strong style="font-size:18px;">${fecha}</strong>
                 <div class="inputs">
                     <textarea placeholder="Placa Recorrido 1"></textarea>
                     <textarea placeholder="Placa Recorrido 2"></textarea>
@@ -189,38 +219,9 @@
     }
 
     function guardar() {
-        const year = yearSelect.value;
-        const month = document.getElementById("selectMonth").value;
-        const numeroRuta = document.getElementById("numeroRuta").value;
-        const observaciones = document.getElementById("observaciones").value;
-
-        const dias = [];
-        document.querySelectorAll(".day-row").forEach(div => {
-            const fecha = div.querySelector("strong").innerText;
-            const seleccionado = div.classList.contains("selected");
-            const textos = div.querySelectorAll("textarea");
-
-            dias.push({
-                fecha,
-                seleccionado,
-                placa1: textos[0].value,
-                placa2: textos[1].value
-            });
-        });
-
-        const datos = {
-            year,
-            month,
-            numeroRuta,
-            observaciones,
-            dias
-        };
-
-        console.log("DATOS A GUARDAR:", datos);
-        alert("Datos listos para guardar. El siguiente paso es conectarlo a SQL Server.");
+        alert("Esta parte la conectamos enseguida a SQL Server 🚀");
     }
 </script>
 
 </body>
 </html>
-
