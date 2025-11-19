@@ -2,98 +2,151 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Planificador Mensual</title>
+<title>Recepción de Certificados</title>
+
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+
 <style>
     body {
-        font-family: Arial, sans-serif;
-        margin: 20px;
-        background: #f7f7f7;
+        font-family: "Inter", sans-serif;
+        margin: 0;
+        padding: 0;
+        background: #eef1f7;
     }
-    h2 {
-        margin-bottom: 10px;
+
+    header {
+        background: #4c6ef5;
+        padding: 20px;
+        color: white;
+        text-align: center;
+        font-size: 26px;
+        font-weight: 600;
+        box-shadow: 0 3px 6px rgba(0,0,0,0.1);
     }
-    select, input, textarea {
-        padding: 6px;
-        margin: 5px 0;
-        width: 250px;
-    }
-    .day-row {
+
+    .container {
+        width: 90%;
+        max-width: 900px;
+        margin: 30px auto;
         background: white;
-        padding: 10px;
-        margin: 5px 0;
-        border-radius: 6px;
-        display: flex;
-        align-items: center;
-        gap: 15px;
-        border: 1px solid #ccc;
+        padding: 25px;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     }
-    .day-row.selected {
-        background: #d9f7be;
-        border-color: #52c41a;
+
+    label {
+        font-weight: 600;
+        margin-top: 10px;
+        display: block;
+        color: #333;
     }
-    .two-inputs {
-        display: flex;
-        gap: 10px;
-    }
-    .two-inputs textarea {
-        width: 250px;
-        height: 70px;
-    }
-    #observaciones {
+
+    select, input, textarea {
         width: 100%;
-        height: 100px;
-        margin-top: 20px;
+        padding: 10px;
+        border-radius: 8px;
+        border: 1px solid #ccc;
+        margin-top: 5px;
+        font-size: 16px;
+        box-sizing: border-box;
     }
+
     button {
+        background: #4c6ef5;
+        border: none;
+        color: white;
+        padding: 12px 25px;
         margin-top: 20px;
-        padding: 10px 20px;
+        border-radius: 8px;
         font-size: 16px;
         cursor: pointer;
-        background: #1890ff;
-        border: none;
-        border-radius: 5px;
-        color: white;
+        transition: .2s;
     }
+
+    button:hover {
+        background: #364fc7;
+    }
+
+    .day-row {
+        background: #f8f9ff;
+        padding: 15px;
+        margin-top: 10px;
+        border-radius: 10px;
+        border: 1px solid #d0d4ea;
+        display: flex;
+        flex-direction: column;
+        transition: 0.2s;
+    }
+
+    .day-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .day-row.selected {
+        background: #e3f8d4;
+        border-color: #74c300;
+    }
+
+    .inputs {
+        display: flex;
+        gap: 10px;
+        margin-top: 10px;
+    }
+
+    .inputs textarea {
+        width: 100%;
+        height: 70px;
+        resize: none;
+    }
+
+    #observaciones {
+        margin-top: 15px;
+        height: 120px;
+    }
+
 </style>
 </head>
 <body>
 
-<h2>Planificador Mensual</h2>
+<header>Recepción de Certificados</header>
 
-<label>Año:</label><br>
-<select id="selectYear"></select>
-<br>
+<div class="container">
 
-<label>Mes:</label><br>
-<select id="selectMonth">
-    <option value="1">Enero</option>
-    <option value="2">Febrero</option>
-    <option value="3">Marzo</option>
-    <option value="4">Abril</option>
-    <option value="5">Mayo</option>
-    <option value="6">Junio</option>
-    <option value="7">Julio</option>
-    <option value="8">Agosto</option>
-    <option value="9">Septiembre</option>
-    <option value="10">Octubre</option>
-    <option value="11">Noviembre</option>
-    <option value="12">Diciembre</option>
-</select>
-<br><br>
+    <label>Año:</label>
+    <select id="selectYear"></select>
 
-<label>Texto adicional:</label><br>
-<input id="textoAdicional" type="text" placeholder="Escribe algo aquí...">
-<br><br>
+    <label>Mes:</label>
+    <select id="selectMonth">
+        <option value="1">Enero</option>
+        <option value="2">Febrero</option>
+        <option value="3">Marzo</option>
+        <option value="4">Abril</option>
+        <option value="5">Mayo</option>
+        <option value="6">Junio</option>
+        <option value="7">Julio</option>
+        <option value="8">Agosto</option>
+        <option value="9">Septiembre</option>
+        <option value="10">Octubre</option>
+        <option value="11">Noviembre</option>
+        <option value="12">Diciembre</option>
+    </select>
 
-<button onclick="generarDias()">Generar días del mes</button>
+    <label>Número de Ruta:</label>
+    <input id="numeroRuta" type="text" placeholder="Ejemplo: 1023">
 
-<div id="contenedorDias"></div>
+    <button onclick="generarDias()">Generar días del mes</button>
 
-<h3>Observaciones:</h3>
-<textarea id="observaciones"></textarea>
+    <div id="contenedorDias"></div>
 
-<br>
-<button onclick="guardar()">Guardar</button>
+    <label>Observaciones:</label>
+    <textarea id="observaciones"></textarea>
+
+    <button onclick="guardar()">Guardar</button>
+
+</div>
 
 <script>
     // Cargar año actual y siguiente
@@ -104,30 +157,30 @@
         <option value="${currentYear + 1}">${currentYear + 1}</option>
     `;
 
-    // Generar los días del mes
     function generarDias() {
         const year = parseInt(yearSelect.value);
         const month = parseInt(document.getElementById("selectMonth").value);
 
         const contenedor = document.getElementById("contenedorDias");
-        contenedor.innerHTML = ""; // limpiar
+        contenedor.innerHTML = "";
 
         const numDias = new Date(year, month, 0).getDate();
 
         for (let d = 1; d <= numDias; d++) {
             const div = document.createElement("div");
             div.className = "day-row";
-            div.onclick = function () {
-                div.classList.toggle("selected");
-            };
+            div.onclick = () => div.classList.toggle("selected");
 
             const fecha = `${d}/${month}/${year}`;
 
             div.innerHTML = `
-                <strong>${fecha}</strong>
-                <div class="two-inputs">
-                    <textarea placeholder="Texto 1"></textarea>
-                    <textarea placeholder="Texto 2"></textarea>
+                <div class="day-header">
+                    <strong>${fecha}</strong>
+                </div>
+
+                <div class="inputs">
+                    <textarea placeholder="Placa Recorrido 1"></textarea>
+                    <textarea placeholder="Placa Recorrido 2"></textarea>
                 </div>
             `;
 
@@ -138,7 +191,7 @@
     function guardar() {
         const year = yearSelect.value;
         const month = document.getElementById("selectMonth").value;
-        const textoAdicional = document.getElementById("textoAdicional").value;
+        const numeroRuta = document.getElementById("numeroRuta").value;
         const observaciones = document.getElementById("observaciones").value;
 
         const dias = [];
@@ -150,25 +203,23 @@
             dias.push({
                 fecha,
                 seleccionado,
-                texto1: textos[0].value,
-                texto2: textos[1].value
+                placa1: textos[0].value,
+                placa2: textos[1].value
             });
         });
 
         const datos = {
             year,
             month,
-            textoAdicional,
+            numeroRuta,
             observaciones,
             dias
         };
 
         console.log("DATOS A GUARDAR:", datos);
-
-        alert("Datos preparados para guardar (falta conexión a SQL Server).");
+        alert("Datos listos para guardar. El siguiente paso es conectarlo a SQL Server.");
     }
 </script>
 
 </body>
 </html>
-
