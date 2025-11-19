@@ -1,9 +1,173 @@
-<html>
+<!DOCTYPE html>
+<html lang="es">
 <head>
-    <title>Mi Primera Web</title>
+<meta charset="UTF-8">
+<title>Planificador Mensual</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+        background: #f7f7f7;
+    }
+    h2 {
+        margin-bottom: 10px;
+    }
+    select, input, textarea {
+        padding: 6px;
+        margin: 5px 0;
+        width: 250px;
+    }
+    .day-row {
+        background: white;
+        padding: 10px;
+        margin: 5px 0;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        border: 1px solid #ccc;
+    }
+    .day-row.selected {
+        background: #d9f7be;
+        border-color: #52c41a;
+    }
+    .two-inputs {
+        display: flex;
+        gap: 10px;
+    }
+    .two-inputs textarea {
+        width: 250px;
+        height: 70px;
+    }
+    #observaciones {
+        width: 100%;
+        height: 100px;
+        margin-top: 20px;
+    }
+    button {
+        margin-top: 20px;
+        padding: 10px 20px;
+        font-size: 16px;
+        cursor: pointer;
+        background: #1890ff;
+        border: none;
+        border-radius: 5px;
+        color: white;
+    }
+</style>
 </head>
 <body>
-    <h1>¡Hola! Esta es mi primera web pública.</h1>
-    <p>Si ves esto online, ya estamos publicando correctamente 🚀</p>
+
+<h2>Planificador Mensual</h2>
+
+<label>Año:</label><br>
+<select id="selectYear"></select>
+<br>
+
+<label>Mes:</label><br>
+<select id="selectMonth">
+    <option value="1">Enero</option>
+    <option value="2">Febrero</option>
+    <option value="3">Marzo</option>
+    <option value="4">Abril</option>
+    <option value="5">Mayo</option>
+    <option value="6">Junio</option>
+    <option value="7">Julio</option>
+    <option value="8">Agosto</option>
+    <option value="9">Septiembre</option>
+    <option value="10">Octubre</option>
+    <option value="11">Noviembre</option>
+    <option value="12">Diciembre</option>
+</select>
+<br><br>
+
+<label>Texto adicional:</label><br>
+<input id="textoAdicional" type="text" placeholder="Escribe algo aquí...">
+<br><br>
+
+<button onclick="generarDias()">Generar días del mes</button>
+
+<div id="contenedorDias"></div>
+
+<h3>Observaciones:</h3>
+<textarea id="observaciones"></textarea>
+
+<br>
+<button onclick="guardar()">Guardar</button>
+
+<script>
+    // Cargar año actual y siguiente
+    const yearSelect = document.getElementById("selectYear");
+    const currentYear = new Date().getFullYear();
+    yearSelect.innerHTML = `
+        <option value="${currentYear}">${currentYear}</option>
+        <option value="${currentYear + 1}">${currentYear + 1}</option>
+    `;
+
+    // Generar los días del mes
+    function generarDias() {
+        const year = parseInt(yearSelect.value);
+        const month = parseInt(document.getElementById("selectMonth").value);
+
+        const contenedor = document.getElementById("contenedorDias");
+        contenedor.innerHTML = ""; // limpiar
+
+        const numDias = new Date(year, month, 0).getDate();
+
+        for (let d = 1; d <= numDias; d++) {
+            const div = document.createElement("div");
+            div.className = "day-row";
+            div.onclick = function () {
+                div.classList.toggle("selected");
+            };
+
+            const fecha = `${d}/${month}/${year}`;
+
+            div.innerHTML = `
+                <strong>${fecha}</strong>
+                <div class="two-inputs">
+                    <textarea placeholder="Texto 1"></textarea>
+                    <textarea placeholder="Texto 2"></textarea>
+                </div>
+            `;
+
+            contenedor.appendChild(div);
+        }
+    }
+
+    function guardar() {
+        const year = yearSelect.value;
+        const month = document.getElementById("selectMonth").value;
+        const textoAdicional = document.getElementById("textoAdicional").value;
+        const observaciones = document.getElementById("observaciones").value;
+
+        const dias = [];
+        document.querySelectorAll(".day-row").forEach(div => {
+            const fecha = div.querySelector("strong").innerText;
+            const seleccionado = div.classList.contains("selected");
+            const textos = div.querySelectorAll("textarea");
+
+            dias.push({
+                fecha,
+                seleccionado,
+                texto1: textos[0].value,
+                texto2: textos[1].value
+            });
+        });
+
+        const datos = {
+            year,
+            month,
+            textoAdicional,
+            observaciones,
+            dias
+        };
+
+        console.log("DATOS A GUARDAR:", datos);
+
+        alert("Datos preparados para guardar (falta conexión a SQL Server).");
+    }
+</script>
+
 </body>
 </html>
