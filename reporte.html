@@ -5,10 +5,8 @@
 <title>Reporte de Certificados</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<!-- SUPABASE -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@1.35.7"></script>
 
-<!-- XLSX para exportar a Excel -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
 <script>
@@ -136,6 +134,7 @@ async function generarReporte() {
     let contratoV = document.getElementById("contrato").value.toUpperCase().trim();
     let rutaV = document.getElementById("ruta").value.toUpperCase().trim();
 
+    // Consulta a Supabase
     let query = client.from("recepcion_certificados").select("*", { head: false });
 
     if (yearV) query = query.eq("año", parseInt(yearV));
@@ -156,17 +155,33 @@ async function generarReporte() {
         return;
     }
 
-    /* 🟢 3. Convertir fecha YYYY-MM-DD → DD-MM-YYYY */
-    const datosConvertidos = data.map(row => {
+    /* 🟢 3. Mapear y reordenar datos al formato deseado (DD-MM-YYYY) */
+    const datosReporte = data.map(row => {
+        // Conversión de fecha YYYY-MM-DD → DD-MM-YYYY
+        let fechaServicioFormateada = row.fecha_servicio;
         if (row.fecha_servicio) {
             const p = row.fecha_servicio.split("-");
-            row.fecha_servicio = `${p[2]}-${p[1]}-${p[0]}`;
+            fechaServicioFormateada = `${p[2]}-${p[1]}-${p[0]}`;
         }
-        return row;
+        
+        // Retorna un nuevo objeto con el orden de columnas deseado
+        return {
+            "ID": row.id,
+            "FECHA_CREACION": row.fecha_creacion,
+            "AÑO": row.año,
+            "MES": row.mes,
+            "NUMERO_DE_CONTRATO_OC": row.numero_de_contrato_oc,
+            "NUMERO_RUTA": row.numero_ruta,
+            "FECHA_SERVICIO": fechaServicioFormateada,
+            "PLACA_RECORRIDO_1": row.placa_recorrido_1,
+            "PLACA_RECORRIDO_2": row.placa_recorrido_2,
+            "OBSERVACION_RECORRIDO": row.observacion, // Asumo que "observacion" es una de las observaciones
+            "OBSERVACION_GENERAL": row.observacion_general
+        };
     });
 
-    /* 🟢 4. Crear Excel */
-    const hoja = XLSX.utils.json_to_sheet(datosConvertidos);
+    /* 🟢 4. Crear Excel a partir de los datos reordenados */
+    const hoja = XLSX.utils.json_to_sheet(datosReporte);
     const libro = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(libro, hoja, "Reporte");
 
