@@ -5,16 +5,16 @@
 <title>Recepción de Certificados</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<!-- ✔️ SUPABASE JS v1 (FUNCIONA EN HTML PURO) -->
+<!-- ✔️ SUPABASE JS v1 (FUNCIONA CON SCRIPT NORMAL) -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@1.35.7"></script>
 
-<!-- ✔️ CONEXIÓN A SUPABASE -->
+<!-- ✔️ CONEXIÓN A SUPABASE (SIN ERRORES) -->
 <script>
     const SUPABASE_URL = "https://vdsqkhajbfevpgeuvfbd.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZkc3FraGFqYmZldnBnZXV2ZmJkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM2MDg3MTIsImV4cCI6MjA3OTE4NDcxMn0.OexzIcRC_F7pnFijSQGZVpXN1xdsDw8zuGR1gFHTyuI";
+    const SUPABASE_ANON_KEY = "TU_KEY_AQUI";
 
-    // ✔️ Versión correcta para supabase-js v1
-    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    // USAMOS "client" PARA EVITAR EL ERROR DE NOMBRE
+    const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     console.log("🔥 Conectado a Supabase correctamente");
 </script>
