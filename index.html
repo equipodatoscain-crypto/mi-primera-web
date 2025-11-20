@@ -1,158 +1,295 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Recepción de Certificados</title>
+<meta charset="UTF-8">
+<title>Recepción de Certificados</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background: #eef1f7;
+        margin: 0;
+        padding: 0;
+    }
 
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: #eef1f5;
-            margin: 0;
-            padding: 0;
-        }
+    /* CONTENEDOR PRINCIPAL */
+    .container {
+        max-width: 95%;
+        margin: 20px auto;
+        background: #fff;
+        padding: 25px;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.12);
+    }
 
-        header {
-            background: #3f5efb;
-            padding: 15px 0;
-            text-align: center;
-            color: white;
-            font-size: 24px;
-            font-weight: bold;
-        }
+    h1 {
+        text-align: center;
+        color: white;
+        background: #3155ff;
+        padding: 18px;
+        margin: 0 0 20px 0;
+        border-radius: 0 0 10px 10px;
+        font-size: 26px;
+    }
 
-        .container {
-            background: white;
-            width: 92%;
-            max-width: 780px;
-            margin: 25px auto;
-            padding: 25px;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
+    label {
+        font-size: 18px;
+        font-weight: bold;
+        display: block;
+        margin-top: 10px;
+    }
 
-        label { 
-            font-weight: bold; 
-            margin-top: 12px;
-            display: block;
-        }
+    select, input {
+        width: 100%;
+        padding: 12px;
+        margin-top: 5px;
+        font-size: 18px;
+        border-radius: 8px;
+        border: 1px solid #ccc;
+    }
 
-        select, input, textarea {
-            width: 100%;
-            padding: 8px;
-            margin-top: 5px;
-            border-radius: 6px;
-            border: 1px solid #ccc;
-        }
+    /* FILA DE FECHA + CAMPOS */
+    .row {
+        display: grid;
+        grid-template-columns: 120px 1fr 1fr 1fr;
+        gap: 10px;
+        align-items: center;
+        margin-bottom: 12px;
+    }
 
-        button {
-            background: #3f5efb;
-            color: white;
-            padding: 10px 18px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 15px;
-            margin-top: 10px;
-        }
+    .row input {
+        font-size: 18px;
+    }
 
-        button:hover {
-            background: #354bd4;
-        }
+    .error {
+        color: red;
+        font-size: 14px;
+        margin-top: -8px;
+        margin-bottom: 5px;
+    }
 
-        /* ---- DÍAS DEL MES (COMPACCIÓN) ---- */
-        .dia-row {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 6px;
-        }
+    .btn {
+        margin-top: 15px;
+        padding: 12px;
+        background: #3155ff;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 18px;
+        width: 100%;
+    }
 
-        .dia-row input[type="text"] {
-            width: 38%;
-        }
-
-        .fecha-box {
-            width: 95px;
-            font-weight: bold;
-        }
-
-        /* RESPONSIVE */
-        @media (max-width: 600px) {
-            .dia-row {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-            .dia-row input[type="text"] {
-                width: 100%;
-            }
-            .fecha-box {
-                width: auto;
-            }
-        }
-    </style>
+    .btn:hover {
+        background: #1e3fe0;
+    }
+</style>
 </head>
-
 <body>
 
-<header>Recepción de Certificados</header>
+<h1>Recepción de Certificados</h1>
 
 <div class="container">
 
     <label>Año:</label>
-    <select id="anio"></select>
+    <select id="year">
+        <option value="">Seleccione año</option>
+        <option>2025</option>
+        <option>2026</option>
+        <option>2027</option>
+    </select>
+    <div id="errYear" class="error"></div>
 
     <label>Mes:</label>
-    <select id="mes">
+    <select id="month">
+        <option value="">Seleccione mes</option>
         <option>Enero</option><option>Febrero</option><option>Marzo</option>
         <option>Abril</option><option>Mayo</option><option>Junio</option>
         <option>Julio</option><option>Agosto</option><option>Septiembre</option>
         <option>Octubre</option><option>Noviembre</option><option>Diciembre</option>
     </select>
+    <div id="errMonth" class="error"></div>
 
     <label>Número de Ruta:</label>
-    <input type="text" id="ruta" placeholder="Ejemplo: U-001">
+    <input id="ruta" placeholder="Ejemplo: U-001">
+    <div id="errRuta" class="error"></div>
 
-    <button onclick="generarDias()">Generar días del mes</button>
+    <button class="btn" onclick="generarDias()">Generar días del mes</button>
 
-    <div id="lista-dias" style="margin-top: 20px;"></div>
-
-    <label>Observaciones:</label>
-    <textarea rows="4" id="observaciones"></textarea>
-
-    <button>Guardar</button>
+    <div id="daysContainer"></div>
 </div>
 
 <script>
-    // Cargar año actual y siguiente
-    let anioActual = new Date().getFullYear();
-    let selectAnio = document.getElementById("anio");
-    selectAnio.innerHTML = `
-        <option>${anioActual}</option>
-        <option>${anioActual + 1}</option>
-    `;
+/* === LISTA DE PLACAS PERMITIDAS === */
+const placasValidas = ["AAA111", "BBB222", "CCC333", "EEE444"];
 
-    function generarDias() {
-        let mes = document.getElementById("mes").selectedIndex + 1;
-        let anio = document.getElementById("anio").value;
-        let contenedor = document.getElementById("lista-dias");
+/* ============================================================
+   FUNCIÓN PARA GENERAR LOS DÍAS DEL MES
+============================================================ */
+function generarDias() {
+    let year = document.getElementById("year").value;
+    let month = document.getElementById("month").value;
+    let ruta = document.getElementById("ruta").value.trim();
 
-        // Último día del mes
-        let ultimoDia = new Date(anio, mes, 0).getDate();
+    let err = false;
 
-        contenedor.innerHTML = "";
+    document.getElementById("errYear").innerHTML = "";
+    document.getElementById("errMonth").innerHTML = "";
+    document.getElementById("errRuta").innerHTML = "";
 
-        for (let dia = 1; dia <= ultimoDia; dia++) {
-            contenedor.innerHTML += `
-                <div class="dia-row">
-                    <div class="fecha-box">${dia}/${mes}/${anio}</div>
-                    <input type="text" placeholder="Placa Recorrido 1">
-                    <input type="text" placeholder="Placa Recorrido 2">
-                </div>
-            `;
-        }
+    if (!year) {
+        document.getElementById("errYear").innerHTML = "El año es obligatorio";
+        err = true;
     }
+    if (!month) {
+        document.getElementById("errMonth").innerHTML = "El mes es obligatorio";
+        err = true;
+    }
+
+    // Validación de ruta: una letra, guion y luego cualquier cosa
+    let rutaReg = /^[A-Za-z]-[A-Za-z0-9]+$/;
+    if (!rutaReg.test(ruta)) {
+        document.getElementById("errRuta").innerHTML = "Formato inválido. Ejemplo válido: U-001";
+        err = true;
+    }
+
+    if (err) return;
+
+    // Guardar selección en localStorage
+    localStorage.setItem("year", year);
+    localStorage.setItem("month", month);
+    localStorage.setItem("ruta", ruta);
+
+    let monthNumber = {
+        "Enero":1,"Febrero":2,"Marzo":3,"Abril":4,"Mayo":5,"Junio":6,
+        "Julio":7,"Agosto":8,"Septiembre":9,"Octubre":10,"Noviembre":11,"Diciembre":12
+    }[month];
+
+    let days = new Date(year, monthNumber, 0).getDate();
+    let container = document.getElementById("daysContainer");
+    container.innerHTML = "";
+
+    for (let d = 1; d <= days; d++) {
+        let dateStr = `${d}/${monthNumber}/${year}`;
+
+        container.innerHTML += `
+            <div class="row">
+                <div><strong>${dateStr}</strong></div>
+
+                <div>
+                    <input class="placa" data-dia="${d}" placeholder="Placa Recorrido 1">
+                    <div class="error" id="err1-${d}"></div>
+                </div>
+
+                <div>
+                    <input class="placa" data-dia="${d}" placeholder="Placa Recorrido 2">
+                    <div class="error" id="err2-${d}"></div>
+                </div>
+
+                <div>
+                    <input class="obs" data-dia="${d}" placeholder="Observación">
+                </div>
+            </div>
+        `;
+    }
+
+    activarValidaciones();
+    restaurarDatos();
+}
+
+
+/* ============================================================
+   VALIDACIÓN DE PLACAS + GUARDADO AUTOMÁTICO
+============================================================ */
+function activarValidaciones() {
+    let placas = document.querySelectorAll(".placa");
+
+    placas.forEach(input => {
+        input.addEventListener("input", function() {
+            let dia = this.dataset.dia;
+
+            // Normalizar placa
+            let p = this.value.toUpperCase()
+                .replace(/\s/g, "")
+                .replace(/-/g, "")
+                .replace(/,/g, "");
+
+            this.value = p;
+
+            // Validación básica: 3 letras + 3 números
+            let formato = /^[A-Z]{3}[0-9]{3}$/;
+
+            let errorBox = document.getElementById(
+                (this.parentNode.previousElementSibling ? "err2" : "err1") + "-" + dia
+            );
+
+            if (!formato.test(p)) {
+                errorBox.innerHTML = "Formato inválido (AAA111)";
+            } else if (!placasValidas.includes(p)) {
+                errorBox.innerHTML = "REVISAR PLACA O CARGAR DOCUMENTOS EN EL DRIVE";
+            } else {
+                errorBox.innerHTML = "";
+            }
+
+            guardarFormulario();
+        });
+    });
+
+    // Guardar observaciones
+    document.querySelectorAll(".obs").forEach(input => {
+        input.addEventListener("input", guardarFormulario);
+    });
+}
+
+
+/* ============================================================
+   GUARDAR TODO EN LOCALSTORAGE
+============================================================ */
+function guardarFormulario() {
+    let datos = {};
+
+    document.querySelectorAll(".placa").forEach(input => {
+        datos[input.dataset.dia + "-p"] = input.value;
+    });
+
+    document.querySelectorAll(".obs").forEach(input => {
+        datos[input.dataset.dia + "-o"] = input.value;
+    });
+
+    localStorage.setItem("formData", JSON.stringify(datos));
+}
+
+
+/* ============================================================
+   RESTAURAR DATOS GUARDADOS
+============================================================ */
+function restaurarDatos() {
+    let datos = JSON.parse(localStorage.getItem("formData") || "{}");
+
+    document.querySelectorAll(".placa").forEach(input => {
+        let key = input.dataset.dia + "-p";
+        if (datos[key]) input.value = datos[key];
+    });
+
+    document.querySelectorAll(".obs").forEach(input => {
+        let key = input.dataset.dia + "-o";
+        if (datos[key]) input.value = datos[key];
+    });
+}
+
+
+/* ============================================================
+   RESTAURAR CAMPOS PRINCIPALES EN EL INICIO
+============================================================ */
+window.onload = function() {
+    let y = localStorage.getItem("year");
+    let m = localStorage.getItem("month");
+    let r = localStorage.getItem("ruta");
+
+    if (y) document.getElementById("year").value = y;
+    if (m) document.getElementById("month").value = m;
+    if (r) document.getElementById("ruta").value = r;
+};
 </script>
 
 </body>
