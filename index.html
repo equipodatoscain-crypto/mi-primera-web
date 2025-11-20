@@ -4,22 +4,13 @@
 <meta charset="UTF-8">
 <title>Recepción de Certificados</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <style>
     body {
         font-family: Arial, sans-serif;
         background: #eef1f7;
         margin: 0;
         padding: 0;
-    }
-
-    /* CONTENEDOR PRINCIPAL */
-    .container {
-        max-width: 95%;
-        margin: 20px auto;
-        background: #fff;
-        padding: 25px;
-        border-radius: 12px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.12);
     }
 
     h1 {
@@ -32,6 +23,15 @@
         font-size: 26px;
     }
 
+    .container {
+        max-width: 95%;
+        margin: 20px auto;
+        background: #fff;
+        padding: 25px;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.12);
+    }
+
     label {
         font-size: 18px;
         font-weight: bold;
@@ -39,35 +39,43 @@
         margin-top: 10px;
     }
 
-    select, input {
+    input, select {
         width: 100%;
         padding: 12px;
-        margin-top: 5px;
         font-size: 18px;
+        margin-top: 5px;
         border-radius: 8px;
         border: 1px solid #ccc;
     }
 
-    /* FILA DE FECHA + CAMPOS */
+    /* FILAS DE FECHAS Y CAMPOS */
     .row {
         display: grid;
-        grid-template-columns: 120px 1fr 1fr 1fr;
-        gap: 10px;
-        align-items: center;
-        margin-bottom: 12px;
+        grid-template-columns: 110px 180px 180px 1fr;
+        gap: 15px;
+        align-items: start;
+        margin-bottom: 18px;
     }
 
-    .row input {
+    .placa {
+        font-size: 18px;
+        text-transform: uppercase;
+    }
+
+    .obs {
+        width: 100%;
         font-size: 18px;
     }
 
+    /* MENSAJE DE ERROR */
     .error {
         color: red;
         font-size: 14px;
-        margin-top: -8px;
-        margin-bottom: 5px;
+        text-align: center;
+        margin-top: 4px;
     }
 
+    /* BOTÓN */
     .btn {
         margin-top: 15px;
         padding: 12px;
@@ -84,6 +92,7 @@
         background: #1e3fe0;
     }
 </style>
+
 </head>
 <body>
 
@@ -111,7 +120,7 @@
     <div id="errMonth" class="error"></div>
 
     <label>Número de Ruta:</label>
-    <input id="ruta" placeholder="Ejemplo: U-001">
+    <input id="ruta" placeholder="Ejemplo: U-001" style="text-transform: uppercase;">
     <div id="errRuta" class="error"></div>
 
     <button class="btn" onclick="generarDias()">Generar días del mes</button>
@@ -120,114 +129,110 @@
 </div>
 
 <script>
-/* === LISTA DE PLACAS PERMITIDAS === */
-const placasValidas = ["AAA111", "BBB222", "CCC333", "EEE444"];
+/* PLACAS PERMITIDAS */
+const placasValidas = ["AAA111","BBB222","CCC333","EEE444"];
 
-/* ============================================================
-   FUNCIÓN PARA GENERAR LOS DÍAS DEL MES
-============================================================ */
+/* GENERAR DÍAS */
 function generarDias() {
-    let year = document.getElementById("year").value;
-    let month = document.getElementById("month").value;
-    let ruta = document.getElementById("ruta").value.trim();
+    let year = yearEl.value;
+    let month = monthEl.value;
+    let ruta = rutaEl.value.toUpperCase().trim();
 
-    let err = false;
+    clearErrors();
 
-    document.getElementById("errYear").innerHTML = "";
-    document.getElementById("errMonth").innerHTML = "";
-    document.getElementById("errRuta").innerHTML = "";
+    let error = false;
 
     if (!year) {
-        document.getElementById("errYear").innerHTML = "El año es obligatorio";
-        err = true;
+        errYear.innerHTML = "El año es obligatorio";
+        error = true;
     }
+
     if (!month) {
-        document.getElementById("errMonth").innerHTML = "El mes es obligatorio";
-        err = true;
+        errMonth.innerHTML = "El mes es obligatorio";
+        error = true;
     }
 
-    // Validación de ruta: una letra, guion y luego cualquier cosa
-    let rutaReg = /^[A-Za-z]-[A-Za-z0-9]+$/;
-    if (!rutaReg.test(ruta)) {
-        document.getElementById("errRuta").innerHTML = "Formato inválido. Ejemplo válido: U-001";
-        err = true;
+    // Validar formato ruta
+    if (!/^[A-Z]-[A-Z0-9]+$/.test(ruta)) {
+        errRuta.innerHTML = "Formato inválido. Ejemplo válido: U-001";
+        error = true;
     }
 
-    if (err) return;
+    if (error) return;
 
-    // Guardar selección en localStorage
+    // Guardar ruta corregida en mayúsculas
+    rutaEl.value = ruta;
+
+    // Guardar campos base
     localStorage.setItem("year", year);
     localStorage.setItem("month", month);
     localStorage.setItem("ruta", ruta);
 
-    let monthNumber = {
+    renderDias(year, month);
+}
+
+function renderDias(year, month) {
+    const monthNum = {
         "Enero":1,"Febrero":2,"Marzo":3,"Abril":4,"Mayo":5,"Junio":6,
         "Julio":7,"Agosto":8,"Septiembre":9,"Octubre":10,"Noviembre":11,"Diciembre":12
     }[month];
 
-    let days = new Date(year, monthNumber, 0).getDate();
-    let container = document.getElementById("daysContainer");
-    container.innerHTML = "";
+    const days = new Date(year, monthNum, 0).getDate();
+    let html = "";
 
     for (let d = 1; d <= days; d++) {
-        let dateStr = `${d}/${monthNumber}/${year}`;
+        let fecha = `${d}/${monthNum}/${year}`;
 
-        container.innerHTML += `
-            <div class="row">
-                <div><strong>${dateStr}</strong></div>
+        html += `
+        <div class="row">
+            <div><strong>${fecha}</strong></div>
 
-                <div>
-                    <input class="placa" data-dia="${d}" placeholder="Placa Recorrido 1">
-                    <div class="error" id="err1-${d}"></div>
-                </div>
-
-                <div>
-                    <input class="placa" data-dia="${d}" placeholder="Placa Recorrido 2">
-                    <div class="error" id="err2-${d}"></div>
-                </div>
-
-                <div>
-                    <input class="obs" data-dia="${d}" placeholder="Observación">
-                </div>
+            <div>
+                <input class="placa" data-dia="${d}" data-campo="p1" placeholder="Placa Recorrido 1">
+                <div class="error" id="err-p1-${d}"></div>
             </div>
+
+            <div>
+                <input class="placa" data-dia="${d}" data-campo="p2" placeholder="Placa Recorrido 2">
+                <div class="error" id="err-p2-${d}"></div>
+            </div>
+
+            <div>
+                <input class="obs" data-dia="${d}" data-campo="obs" placeholder="Observación">
+            </div>
+        </div>
         `;
     }
+
+    daysContainer.innerHTML = html;
 
     activarValidaciones();
     restaurarDatos();
 }
 
-
-/* ============================================================
-   VALIDACIÓN DE PLACAS + GUARDADO AUTOMÁTICO
-============================================================ */
+/* VALIDACIÓN PLACAS */
 function activarValidaciones() {
-    let placas = document.querySelectorAll(".placa");
-
-    placas.forEach(input => {
-        input.addEventListener("input", function() {
+    document.querySelectorAll(".placa").forEach(input => {
+        input.addEventListener("input", function () {
             let dia = this.dataset.dia;
+            let campo = this.dataset.campo;
 
-            // Normalizar placa
-            let p = this.value.toUpperCase()
-                .replace(/\s/g, "")
-                .replace(/-/g, "")
-                .replace(/,/g, "");
+            let limpio = this.value.toUpperCase()
+                .replace(/\s/g,"")
+                .replace(/-/g,"")
+                .replace(/,/g,"");
 
-            this.value = p;
+            this.value = limpio;
 
-            // Validación básica: 3 letras + 3 números
-            let formato = /^[A-Z]{3}[0-9]{3}$/;
+            let errorBox = document.getElementById(`err-${campo}-${dia}`);
 
-            let errorBox = document.getElementById(
-                (this.parentNode.previousElementSibling ? "err2" : "err1") + "-" + dia
-            );
-
-            if (!formato.test(p)) {
+            if (!/^[A-Z]{3}[0-9]{3}$/.test(limpio)) {
                 errorBox.innerHTML = "Formato inválido (AAA111)";
-            } else if (!placasValidas.includes(p)) {
+            }
+            else if (!placasValidas.includes(limpio)) {
                 errorBox.innerHTML = "REVISAR PLACA O CARGAR DOCUMENTOS EN EL DRIVE";
-            } else {
+            }
+            else {
                 errorBox.innerHTML = "";
             }
 
@@ -235,61 +240,55 @@ function activarValidaciones() {
         });
     });
 
-    // Guardar observaciones
     document.querySelectorAll(".obs").forEach(input => {
         input.addEventListener("input", guardarFormulario);
     });
 }
 
-
-/* ============================================================
-   GUARDAR TODO EN LOCALSTORAGE
-============================================================ */
+/* GUARDAR FORMULARIO */
 function guardarFormulario() {
     let datos = {};
 
-    document.querySelectorAll(".placa").forEach(input => {
-        datos[input.dataset.dia + "-p"] = input.value;
-    });
-
-    document.querySelectorAll(".obs").forEach(input => {
-        datos[input.dataset.dia + "-o"] = input.value;
+    document.querySelectorAll(".placa, .obs").forEach(input => {
+        let key = `${input.dataset.dia}-${input.dataset.campo}`;
+        datos[key] = input.value;
     });
 
     localStorage.setItem("formData", JSON.stringify(datos));
 }
 
-
-/* ============================================================
-   RESTAURAR DATOS GUARDADOS
-============================================================ */
+/* RESTAURAR DATOS */
 function restaurarDatos() {
     let datos = JSON.parse(localStorage.getItem("formData") || "{}");
 
-    document.querySelectorAll(".placa").forEach(input => {
-        let key = input.dataset.dia + "-p";
-        if (datos[key]) input.value = datos[key];
-    });
-
-    document.querySelectorAll(".obs").forEach(input => {
-        let key = input.dataset.dia + "-o";
+    document.querySelectorAll(".placa, .obs").forEach(input => {
+        let key = `${input.dataset.dia}-${input.dataset.campo}`;
         if (datos[key]) input.value = datos[key];
     });
 }
 
+/* LIMPIAR ERRORES */
+function clearErrors() {
+    errYear.innerHTML = "";
+    errMonth.innerHTML = "";
+    errRuta.innerHTML = "";
+}
 
-/* ============================================================
-   RESTAURAR CAMPOS PRINCIPALES EN EL INICIO
-============================================================ */
-window.onload = function() {
-    let y = localStorage.getItem("year");
-    let m = localStorage.getItem("month");
-    let r = localStorage.getItem("ruta");
-
-    if (y) document.getElementById("year").value = y;
-    if (m) document.getElementById("month").value = m;
-    if (r) document.getElementById("ruta").value = r;
+/* RESTAURAR CAMPOS PRINCIPALES */
+window.onload = function () {
+    if (localStorage.year) yearEl.value = localStorage.year;
+    if (localStorage.month) monthEl.value = localStorage.month;
+    if (localStorage.ruta) rutaEl.value = localStorage.ruta;
 };
+
+const yearEl = document.getElementById("year");
+const monthEl = document.getElementById("month");
+const rutaEl = document.getElementById("ruta");
+
+const errYear = document.getElementById("errYear");
+const errMonth = document.getElementById("errMonth");
+const errRuta = document.getElementById("errRuta");
+const daysContainer = document.getElementById("daysContainer");
 </script>
 
 </body>
