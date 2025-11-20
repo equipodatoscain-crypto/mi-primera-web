@@ -104,10 +104,10 @@
     </select>
 
     <label>Número de Contrato - OC:</label>
-    <input id="contrato" placeholder="Ej: OC-2025-001">
+    <input id="contrato" placeholder="Ej: 143219">
 
     <label>Número de Ruta:</label>
-    <input id="ruta" placeholder="Ej: Y-001">
+    <input id="ruta" placeholder="Ej: U-001">
 
     <label>Responsable:</label>
     <input id="responsable" placeholder="Nombre del responsable">
@@ -115,7 +115,6 @@
     <label>Estado:</label>
     <select id="estado">
         <option value="">(Todos)</option>
-        <option>PENDIENTE</option>
         <option>APROBADO</option>
         <option>RECHAZADO</option>
     </select>
@@ -126,8 +125,7 @@
 <script>
 async function generarReporte() {
 
-    // 1. Definimos el orden y los nombres de las columnas de la BD (en minúsculas para evitar errores de Supabase).
-    // El orden respeta tu solicitud: id, fecha_creacion, año, mes, numero_de_contrato_oc, ... RESPONSABLE, ESTADO
+    // 1. Definimos el orden y los nombres de las columnas de la BD (en minúsculas/snake_case para Supabase).
     const dbColumns = [
         "id",
         "fecha_creacion",
@@ -138,13 +136,13 @@ async function generarReporte() {
         "fecha_servicio",
         "placa_recorrido_1",
         "placa_recorrido_2",
-        "observacion",           // Observación del recorrido
+        "observacion",           
         "observacion_general",
-        "responsable",           // Corregido a minúsculas
-        "estado"                 // Corregido a minúsculas
+        "responsable",           
+        "estado"                 
     ];
 
-    // 2. Mapeamos los nombres de la BD a los títulos en MAYÚSCULAS para el Excel.
+    // 2. Mapeamos los nombres de la BD (minúsculas) a los títulos en MAYÚSCULAS para el Excel.
     const excelHeaders = {
         "id": "ID",
         "fecha_creacion": "FECHA_CREACION",
@@ -155,7 +153,7 @@ async function generarReporte() {
         "fecha_servicio": "FECHA_SERVICIO",
         "placa_recorrido_1": "PLACA_RECORRIDO_1",
         "placa_recorrido_2": "PLACA_RECORRIDO_2",
-        "observacion": "OBSERVACION_RECORRIDO", // Título para la columna 'observacion'
+        "observacion": "OBSERVACION_RECORRIDO", 
         "observacion_general": "OBSERVACION_GENERAL",
         "responsable": "RESPONSABLE",
         "estado": "ESTADO"
@@ -169,16 +167,24 @@ async function generarReporte() {
     let responsableV = document.getElementById("responsable").value.toUpperCase().trim(); 
     let estadoV = document.getElementById("estado").value.toUpperCase().trim();           
 
-    // CONSULTA INICIAL: Solicitando columnas específicas a Supabase
+    // CONSULTA INICIAL
     let query = client.from("recepcion_certificados").select(dbColumns.join(","), { head: false });
 
     // APLICACIÓN DE FILTROS
-    if (yearV) query = query.eq("año", parseInt(yearV));
+
+    // **LÓGICA CORREGIDA PARA EL AÑO (Todos):**
+    const yearNumber = yearV ? Number(yearV) : null; 
+    
+    // Solo aplica el filtro si hay un número válido. Si yearV es "", yearNumber es null y el filtro no se aplica.
+    if (yearNumber && !isNaN(yearNumber)) {
+        query = query.eq("año", yearNumber);
+    }
+    
     if (monthV) query = query.eq("mes", monthV.toUpperCase());
     if (contratoV) query = query.eq("numero_de_contrato_oc", contratoV);
     if (rutaV) query = query.eq("numero_ruta", rutaV);
     
-    // Filtros usando nombres de columna en minúsculas (más seguro para Supabase/PostgreSQL)
+    // Filtros de las nuevas columnas (usando minúsculas)
     if (responsableV) query = query.eq("responsable", responsableV); 
     if (estadoV) query = query.eq("estado", estadoV);                 
 
@@ -196,17 +202,15 @@ async function generarReporte() {
     }
 
     // --- GENERACIÓN DE EXCEL ---
-    // 1. Crear la hoja de cálculo usando la lista dbColumns para definir el orden.
     const hoja = XLSX.utils.json_to_sheet(data, { 
         header: dbColumns 
     });
 
-    // 2. Sobrescribimos la primera fila con los títulos en MAYÚSCULAS.
+    // Sobrescribimos la primera fila con los títulos en MAYÚSCULAS.
     XLSX.utils.sheet_add_aoa(hoja, [
         dbColumns.map(colName => excelHeaders[colName]) 
     ], { origin: "A1" });
 
-    // 3. Exportar a Excel
     const libro = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(libro, hoja, "Reporte");
     XLSX.writeFile(libro, "reporte_certificados.xlsx");
