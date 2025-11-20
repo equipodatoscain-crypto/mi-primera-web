@@ -5,16 +5,14 @@
 <title>Recepción de Certificados</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<!-- SUPABASE (versión 1, funciona 100% en HTML) -->
+<!-- SUPABASE (versión 1 estable) -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@1.35.7"></script>
 
 <script>
     const SUPABASE_URL = "https://vdsqkhajbfevpgeuvfbd.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZkc3FraGFqYmZldnBnZXV2ZmJkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM2MDg3MTIsImV4cCI6MjA3OTE4NDcxMn0.OexzIcRC_F7pnFijSQGZVpXN1xdsDw8zuGR1gFHTyuI";
 
-    /* ✔ CLIENT (sin choque de nombres) */
     const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
     console.log("🔥 Conectado a Supabase correctamente");
 </script>
 
@@ -143,6 +141,11 @@
     </select>
     <div id="errorM" class="msg"></div>
 
+    <!-- 🆕 NUEVO CAMPO NUMERO DE CONTRATO / OC -->
+    <label>Número de Contrato / OC:</label>
+    <input id="contrato" placeholder="Ejemplo: OC-2025-001">
+    <div id="errorC" class="msg"></div>
+
     <label>Número de Ruta:</label>
     <input id="ruta" placeholder="Ejemplo: Y-001">
     <div id="errorR" class="msg"></div>
@@ -164,16 +167,21 @@
 const placasValidas = ["AAA111","BBB222","CCC333","EEE444"];
 
 function generarDias() {
-    let y = year.value, m = month.value, r = ruta.value.toUpperCase().trim();
+    let y = year.value, 
+        m = month.value, 
+        r = ruta.value.toUpperCase().trim(),
+        c = contrato.value.toUpperCase().trim();
 
     errorY.innerHTML = "";
     errorM.innerHTML = "";
     errorR.innerHTML = "";
+    errorC.innerHTML = "";
 
     let err = false;
 
     if (!y) { errorY.innerHTML = "Año obligatorio"; err = true; }
     if (!m) { errorM.innerHTML = "Mes obligatorio"; err = true; }
+    if (!c) { errorC.innerHTML = "Contrato / OC es obligatorio"; err = true; }
 
     let regRuta = /^[A-Z]-[A-Z0-9]+$/;
     if (!regRuta.test(r)) {
@@ -184,9 +192,12 @@ function generarDias() {
     if (err) return;
 
     ruta.value = r;
+    contrato.value = c;
+
     localStorage.setItem("year", y);
     localStorage.setItem("month", m);
     localStorage.setItem("ruta", r);
+    localStorage.setItem("contrato", c);
 
     const meses = {"Enero":1,"Febrero":2,"Marzo":3,"Abril":4,"Mayo":5,"Junio":6,"Julio":7,"Agosto":8,"Septiembre":9,"Octubre":10,"Noviembre":11,"Diciembre":12};
     let nMes = meses[m];
@@ -252,30 +263,25 @@ function activarValidaciones() {
 
 
 
-/* 🟦 OPCIÓN C — Guardar TODOS los días, vacíos = NULL */
+/* 🟦 GUARDAR TODOS LOS DÍAS — campos vacíos = NULL */
 async function guardarDatos() {
 
-    const year = document.getElementById("year").value;
-    const month = document.getElementById("month").value;
-    const ruta = document.getElementById("ruta").value.toUpperCase();
-    const obsGeneral = document.getElementById("obsGeneral").value.toUpperCase();
+    const year = year.value;
+    const month = month.value;
+    const rutaV = ruta.value.toUpperCase();
+    const contratoV = contrato.value.toUpperCase();
+    const obsGeneral = obsGeneral.value.toUpperCase();
 
-    if (!year || !month || !ruta) {
-        alert("Año, mes y número de ruta son obligatorios");
+    if (!year || !month || !rutaV || !contratoV) {
+        alert("TODOS LOS CAMPOS PRINCIPALES SON OBLIGATORIOS");
         return;
     }
-
-    const meses = {
-        "ENERO": 1, "FEBRERO": 2, "MARZO": 3, "ABRIL": 4,
-        "MAYO": 5, "JUNIO": 6, "JULIO": 7, "AGOSTO": 8,
-        "SEPTIEMBRE": 9, "OCTUBRE": 10, "NOVIEMBRE": 11, "DICIEMBRE": 12
-    };
 
     let registros = [];
 
     document.querySelectorAll(".row").forEach(row => {
 
-        let fechaTexto = row.querySelector("b").innerText; 
+        let fechaTexto = row.querySelector("b").innerText;
         let [dia, mes, anio] = fechaTexto.split("/");
         let fechaISO = `${anio}-${String(mes).padStart(2,'0')}-${String(dia).padStart(2,'0')}`;
 
@@ -290,7 +296,8 @@ async function guardarDatos() {
         registros.push({
             año: parseInt(year),
             mes: month.toUpperCase(),
-            numero_ruta: ruta,
+            numero_ruta: rutaV,
+            numero_de_contrato_oc: contratoV,
             fecha_servicio: fechaISO,
             placa_recorrido_1: placa1,
             placa_recorrido_2: placa2,
@@ -300,21 +307,19 @@ async function guardarDatos() {
 
     });
 
-    console.log("📤 Enviando registros a Supabase:", registros);
+    console.log("📤 Enviando a Supabase:", registros);
 
     const { data, error } = await client
         .from("recepcion_certificados")
         .insert(registros);
 
     if (error) {
-        console.error("❌ ERROR al insertar:", error);
-        alert("Hubo un error al guardar. Revisa consola.");
+        console.error("❌ ERROR:", error);
+        alert("Error al guardar. Revisa consola.");
         return;
     }
 
-    console.log("✅ REGISTROS INSERTADOS:", data);
-    alert("Datos guardados correctamente");
-
+    alert("Datos guardados correctamente en Supabase");
 }
 </script>
 
