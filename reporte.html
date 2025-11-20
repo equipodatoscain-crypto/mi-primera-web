@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Reporte de Certificados</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- SUPABASE -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@1.35.7"></script>
+
+<!-- XLSX para exportar a Excel -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<script>
+    const SUPABASE_URL = "https://vdsqkhajbfevpgeuvfbd.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZkc3FraGFqYmZldnBnZXV2ZmJkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM2MDg3MTIsImV4cCI6MjA3OTE4NDcxMn0.OexzIcRC_F7pnFijSQGZVpXN1xdsDw8zuGR1gFHTyuI";
+
+    const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+</script>
+
+<style>
+    body {
+        font-family: Arial;
+        background: #eef1f7;
+        margin: 0;
+        padding: 0;
+    }
+
+    .container {
+        width: 95%;
+        max-width: 700px;
+        background: white;
+        margin: 20px auto;
+        padding: 25px;
+        border-radius: 10px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+
+    h1 {
+        text-align: center;
+        background: #28a745;
+        color: white;
+        padding: 18px;
+        margin-top: 0;
+        border-radius: 0 0 10px 10px;
+    }
+
+    label { font-weight: bold; margin-top: 10px; display: block; }
+
+    select, input {
+        width: 100%;
+        padding: 10px;
+        border-radius: 6px;
+        border: 1px solid #ccc;
+        margin-top: 5px;
+        text-transform: uppercase;
+    }
+
+    .btn {
+        width: 100%;
+        padding: 12px;
+        background: #28a745;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-size: 18px;
+        margin-top: 20px;
+        cursor: pointer;
+    }
+
+    .btn:hover {
+        background: #1e8a38;
+    }
+</style>
+
+</head>
+<body>
+
+<div class="container">
+
+    <h1>📊 Reporte de Certificados</h1>
+
+    <label>Año:</label>
+    <select id="year">
+        <option value="">(Todos)</option>
+        <option>2025</option>
+        <option>2026</option>
+        <option>2027</option>
+    </select>
+
+    <label>Mes:</label>
+    <select id="month">
+        <option value="">(Todos)</option>
+        <option>Enero</option>
+        <option>Febrero</option>
+        <option>Marzo</option>
+        <option>Abril</option>
+        <option>Mayo</option>
+        <option>Junio</option>
+        <option>Julio</option>
+        <option>Agosto</option>
+        <option>Septiembre</option>
+        <option>Octubre</option>
+        <option>Noviembre</option>
+        <option>Diciembre</option>
+    </select>
+
+    <label>Número de Contrato - OC:</label>
+    <input id="contrato" placeholder="Ej: OC-2025-001">
+
+    <label>Número de Ruta:</label>
+    <input id="ruta" placeholder="Ej: Y-001">
+
+    <button class="btn" onclick="generarReporte()">GENERAR REPORTE (EXCEL)</button>
+
+</div>
+
+<script>
+async function generarReporte() {
+
+    let yearV = document.getElementById("year").value;
+    let monthV = document.getElementById("month").value;
+    let contratoV = document.getElementById("contrato").value.toUpperCase().trim();
+    let rutaV = document.getElementById("ruta").value.toUpperCase().trim();
+
+    let query = client.from("recepcion_certificados").select("*", { head: false });
+
+    if (yearV) query = query.eq("año", parseInt(yearV));
+    if (monthV) query = query.eq("mes", monthV.toUpperCase());
+    if (contratoV) query = query.eq("numero_de_contrato_oc", contratoV);
+    if (rutaV) query = query.eq("numero_ruta", rutaV);
+
+    const { data, error } = await query;
+
+    if (error) {
+        console.error(error);
+        alert("Error consultando Supabase");
+        return;
+    }
+
+    if (data.length === 0) {
+        alert("No hay datos con esos filtros.");
+        return;
+    }
+
+    // Convertir a hoja Excel
+    const hoja = XLSX.utils.json_to_sheet(data);
+    const libro = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(libro, hoja, "Reporte");
+
+    // Descargar archivo
+    XLSX.writeFile(libro, "reporte_certificados.xlsx");
+
+    alert("Excel generado correctamente ✔");
+}
+</script>
+
+</body>
+</html>
