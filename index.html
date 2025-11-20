@@ -5,29 +5,16 @@
 <title>Recepción de Certificados</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<!-- 1) Cargar librería -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-<!-- 2) Script con conexión -->
-<script>
-    const SUPABASE_URL = "https://vdsqkhajbfevpgeuvfbd.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...";
-
-    // CORREGIDO: Supabase.createClient ✔️
-    const supabase = Supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-    console.log("🔥 Conectado a Supabase correctamente");
-</script>
-
-    
 <style>
-
     body {
         font-family: Arial;
         background: #eef1f7;
         margin: 0;
         padding: 0;
     }
+    /* ... (resto de tus estilos CSS) ... */
 
     h1 {
         text-align: center;
@@ -46,7 +33,6 @@
         padding: 20px;
         border-radius: 10px;
         box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-        /* Importante: Si el contenido es largo, el scroll es en el body, lo cual está bien. */
     }
 
     label {
@@ -81,7 +67,6 @@
         margin-top: 25px; 
     }
 
-    /* AJUSTE CLAVE PARA FIJAR EL ENCABEZADO */
     .header-row {
         font-weight: bold;
         padding: 10px 0;
@@ -90,15 +75,13 @@
         color: #3155ff;
         align-items: center;
         
-        /* PROPIEDADES STICKY */
         position: sticky; 
-        top: 0px; /* Se detendrá justo arriba del borde de la pantalla */
-        background-color: white; /* Añade un fondo para que tape el contenido de abajo */
-        z-index: 10; /* Asegura que esté por encima de las filas de datos */
-        padding-top: 15px; /* Pequeño espacio extra arriba para que no se pegue al borde */
+        top: 0px; 
+        background-color: white; 
+        z-index: 10; 
+        padding-top: 15px; 
     }
     
-    /* Estructura de columnas */
     .row, .header-row {
         display: grid;
         grid-template-columns: 180px 1fr 1fr 1.5fr; 
@@ -106,7 +89,6 @@
         padding-right: 15px;
     }
 
-    /* Estilo para cada fila de datos */
     .row {
         margin-bottom: 10px;
         padding: 10px;
@@ -115,7 +97,6 @@
         align-items: center; 
     }
 
-    /* Estilo específico para el div de la fecha */
     .row > div:first-child {
         text-align: center; 
     }
@@ -173,6 +154,17 @@
 </div>
 
 <script>
+// --- CÓDIGO DE CONEXIÓN DE SUPABASE MOVIDO AQUÍ ---
+const SUPABASE_URL = "https://vdsqkhajbfevpgeuvfbd.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...";
+
+// Ahora Supabase ya está cargado y definido.
+const supabase = Supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+console.log("🔥 Conectado a Supabase correctamente");
+// --------------------------------------------------
+
+
 const placasValidas = ["AAA111","BBB222","CCC333","EEE444"];
 
 function generarDias() {
@@ -279,6 +271,3 @@ window.onload = function() {
 
 </body>
 </html>
-
-
-
