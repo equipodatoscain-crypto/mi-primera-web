@@ -134,9 +134,7 @@
 <script>
 async function generarReporte() {
 
-    // ============================
-    // 1. Tomar valores del filtro
-    // ============================
+    // Obtención de filtros
     let yearV = document.getElementById("year").value;
     let monthV = document.getElementById("month").value;
     let contratoV = document.getElementById("contrato").value.toUpperCase().trim();
@@ -144,15 +142,14 @@ async function generarReporte() {
     let responsableV = document.getElementById("responsable").value.toUpperCase().trim();
     let estadoV = document.getElementById("estado").value.toUpperCase().trim();
 
-    // ============================
-    // 2. Construir consulta
-    // ============================
+    // Consulta base sin restricciones
     let query = client
         .from("recepcion_certificados")
-        .select("*")  // <-- CORRECCIÓN IMPORTANTE
+        .select("*")
         .order("id", { ascending: true })
         .range(0, 999999);
 
+    // Filtros
     if (yearV) query = query.eq("año", yearV);
     if (monthV) query = query.eq("mes", monthV.toUpperCase());
     if (contratoV) query = query.eq("numero_de_contrato_oc", contratoV);
@@ -163,7 +160,7 @@ async function generarReporte() {
     const { data, error } = await query;
 
     if (error) {
-        alert("❌ Error al consultar Supabase");
+        alert("❌ Error consultando Supabase");
         console.error(error);
         return;
     }
@@ -173,21 +170,41 @@ async function generarReporte() {
         return;
     }
 
-    // ==============================================
-    // 3. Convertir fecha YYYY-MM-DD → DD-MM-YYYY
-    // ==============================================
-    const datosConvertidos = data.map(row => {
-        if (row.fecha_servicio && row.fecha_servicio.includes("-")) {
+    // Convertir fecha YYYY-MM-DD → DD-MM-YYYY
+    const convertidos = data.map(row => {
+        if (row.fecha_servicio?.includes("-")) {
             const p = row.fecha_servicio.split("-");
             row.fecha_servicio = `${p[2]}-${p[1]}-${p[0]}`;
         }
         return row;
     });
 
-    // ==============================================
-    // 4. Crear Excel
-    // ==============================================
-    const hoja = XLSX.utils.json_to_sheet(datosConvertidos);
+    // Orden EXACTO solicitado
+    const ordenColumnas = [
+        "id",
+        "fecha_creacion",
+        "año",
+        "mes",
+        "numero_de_contrato_oc",
+        "numero_ruta",
+        "fecha_servicio",
+        "placa_recorrido_1",
+        "placa_recorrido_2",
+        "observacion",
+        "observacion_general",
+        "responsable",
+        "estado"
+    ];
+
+    // Reordenar
+    const datosOrdenados = convertidos.map(row => {
+        const nuevo = {};
+        ordenColumnas.forEach(col => nuevo[col] = row[col]);
+        return nuevo;
+    });
+
+    // Crear Excel
+    const hoja = XLSX.utils.json_to_sheet(datosOrdenados);
     const libro = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(libro, hoja, "Reporte");
 
