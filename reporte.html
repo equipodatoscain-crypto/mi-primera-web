@@ -1,26 +1,150 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Reporte de Certificados</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@1.35.7"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<script>
+    const SUPABASE_URL = "https://vdsqkhajbfevpgeuvfbd.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZkc3FraGFqYmZldnBnZXV2ZmJkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM2MDg3MTIsImV4cCI6MjA3OTE4NDcxMn0.OexzIcRC_F7pnFijSQGZVpXN1xdsDw8zuGR1gFHTyuI";
+
+    const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+</script>
+
+<style>
+    body {
+        font-family: Arial;
+        background: #eef1f7;
+        margin: 0;
+        padding: 0;
+    }
+
+    .container {
+        width: 95%;
+        max-width: 700px;
+        background: white;
+        margin: 20px auto;
+        padding: 25px;
+        border-radius: 10px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+
+    h1 {
+        text-align: center;
+        background: #28a745;
+        color: white;
+        padding: 18px;
+        margin-top: 0;
+        border-radius: 0 0 10px 10px;
+    }
+
+    label { font-weight: bold; margin-top: 10px; display: block; }
+
+    select, input {
+        width: 100%;
+        padding: 10px;
+        border-radius: 6px;
+        border: 1px solid #ccc;
+        margin-top: 5px;
+        text-transform: uppercase;
+    }
+
+    .btn {
+        width: 100%;
+        padding: 12px;
+        background: #28a745;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-size: 18px;
+        margin-top: 20px;
+        cursor: pointer;
+    }
+
+    .btn:hover {
+        background: #1e8a38;
+    }
+</style>
+
+</head>
+<body>
+
+<div class="container">
+
+    <h1>📊 Reporte de Certificados</h1>
+
+    <label>Año:</label>
+    <select id="year">
+        <option value="">(Todos)</option>
+        <option>2025</option>
+        <option>2026</option>
+        <option>2027</option>
+    </select>
+
+    <label>Mes:</label>
+    <select id="month">
+        <option value="">(Todos)</option>
+        <option>Enero</option>
+        <option>Febrero</option>
+        <option>Marzo</option>
+        <option>Abril</option>
+        <option>Mayo</option>
+        <option>Junio</option>
+        <option>Julio</option>
+        <option>Agosto</option>
+        <option>Septiembre</option>
+        <option>Octubre</option>
+        <option>Noviembre</option>
+        <option>Diciembre</option>
+    </select>
+
+    <label>Número de Contrato - OC:</label>
+    <input id="contrato" placeholder="Ej: OC-2025-001">
+
+    <label>Número de Ruta:</label>
+    <input id="ruta" placeholder="Ej: Y-001">
+
+    <label>Responsable:</label>
+    <input id="responsable" placeholder="Nombre del responsable">
+
+    <label>Estado:</label>
+    <select id="estado">
+        <option value="">(Todos)</option>
+        <option>PENDIENTE</option>
+        <option>APROBADO</option>
+        <option>RECHAZADO</option>
+    </select>
+    <button class="btn" onclick="generarReporte()">GENERAR REPORTE (EXCEL)</button>
+
+</div>
+
 <script>
 async function generarReporte() {
 
     // 1. Definimos el orden y los nombres EXACTOS de las columnas de la BD que queremos.
-    // **Ajusté "responsable" y "estado" a MAYÚSCULAS según la imagen de tu tabla.**
+    // Usamos Mayúsculas para RESPONSABLE y ESTADO, según tu esquema de Supabase.
     const dbColumns = [
         "id",
         "fecha_creacion",
         "año",
         "mes",
-        "numero_de_contrato_oc", // Nombre de la BD
+        "numero_de_contrato_oc", 
         "numero_ruta",
         "fecha_servicio",
         "placa_recorrido_1",
         "placa_recorrido_2",
         "observacion_recorrido",
         "observacion_general",
-        "RESPONSABLE",           // Nombre de la BD (asumimos Mayúsculas)
-        "ESTADO"                 // Nombre de la BD (asumimos Mayúsculas)
+        "RESPONSABLE",           
+        "ESTADO"                 
     ];
 
     // 2. Mapeamos los nombres de la BD a los títulos en MAYÚSCULAS para el Excel.
-    // Usaremos esta lista para la primera fila del Excel.
     const excelHeaders = {
         "id": "ID",
         "fecha_creacion": "FECHA_CREACION",
@@ -33,18 +157,17 @@ async function generarReporte() {
         "placa_recorrido_2": "PLACA_RECORRIDO_2",
         "observacion_recorrido": "OBSERVACION_RECORRIDO",
         "observacion_general": "OBSERVACION_GENERAL",
-        "RESPONSABLE": "RESPONSABLE", // Mantienen el mismo nombre en este caso
-        "ESTADO": "ESTADO"           // Mantienen el mismo nombre en este caso
+        "RESPONSABLE": "RESPONSABLE",
+        "ESTADO": "ESTADO"
     };
 
-
-    // CAPTURA DE VALORES DEL FORMULARIO
+    // CAPTURA DE VALORES DEL FORMULARIO (incluyendo los nuevos filtros)
     let yearV = document.getElementById("year").value;
     let monthV = document.getElementById("month").value;
     let contratoV = document.getElementById("contrato").value.toUpperCase().trim();
     let rutaV = document.getElementById("ruta").value.toUpperCase().trim();
-    let responsableV = document.getElementById("responsable").value.toUpperCase().trim();
-    let estadoV = document.getElementById("estado").value.toUpperCase().trim();
+    let responsableV = document.getElementById("responsable").value.toUpperCase().trim(); // Captura Responsable
+    let estadoV = document.getElementById("estado").value.toUpperCase().trim();           // Captura Estado
 
     // CONSULTA INICIAL: Solo pedimos las columnas definidas en dbColumns
     let query = client.from("recepcion_certificados").select(dbColumns.join(","), { head: false });
@@ -54,15 +177,14 @@ async function generarReporte() {
     if (monthV) query = query.eq("mes", monthV.toUpperCase());
     if (contratoV) query = query.eq("numero_de_contrato_oc", contratoV);
     if (rutaV) query = query.eq("numero_ruta", rutaV);
-    // **Nota:** Usamos los nombres de columna exactos para el filtro
-    if (responsableV) query = query.eq("RESPONSABLE", responsableV); 
-    if (estadoV) query = query.eq("ESTADO", estadoV);                 
+    if (responsableV) query = query.eq("RESPONSABLE", responsableV); // Nuevo filtro (usando nombre de BD en Mayúsculas)
+    if (estadoV) query = query.eq("ESTADO", estadoV);                 // Nuevo filtro (usando nombre de BD en Mayúsculas)
 
     const { data, error } = await query;
 
     if (error) {
-        console.error(error);
-        alert("Error consultando Supabase");
+        console.error("❌ ERROR CONSULTANDO SUPABASE:", error);
+        alert("Error consultando Supabase. Revisa la consola.");
         return;
     }
 
@@ -72,13 +194,12 @@ async function generarReporte() {
     }
 
     // --- GENERACIÓN DE EXCEL ---
-    // 1. Crear la hoja de cálculo. data ya solo contiene las columnas que queremos.
+    // 1. Crear la hoja de cálculo usando la lista dbColumns para definir el orden.
     const hoja = XLSX.utils.json_to_sheet(data, { 
-        header: dbColumns // Usamos la lista de la BD para asegurar el orden
+        header: dbColumns 
     });
 
     // 2. Cambiamos los nombres de los encabezados de la primera fila al formato deseado (MAYÚSCULAS)
-    // Mapeamos los nombres de las columnas de la BD (dbColumns) a los títulos de Excel (excelHeaders).
     XLSX.utils.sheet_add_aoa(hoja, [
         dbColumns.map(colName => excelHeaders[colName]) 
     ], { origin: "A1" });
@@ -91,3 +212,6 @@ async function generarReporte() {
     alert("Excel generado correctamente ✔");
 }
 </script>
+
+</body>
+</html>
