@@ -13,6 +13,7 @@
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZkc3FraGFqYmZldnBnZXV2ZmJkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM2MDg3MTIsImV4cCI6MjA3OTE4NDcxMn0.OexzIcRC_F7pnFijSQGZVpXN1xdsDw8zuGR1gFHTyuI";
 
     const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
     console.log("🔥 Conectado a Supabase correctamente");
 </script>
 
@@ -141,7 +142,7 @@
     </select>
     <div id="errorM" class="msg"></div>
 
-    <!-- 🆕 NUEVO CAMPO NUMERO DE CONTRATO / OC -->
+    <!-- NUEVO CAMPO -->
     <label>Número de Contrato / OC:</label>
     <input id="contrato" placeholder="Ejemplo: OC-2025-001">
     <div id="errorC" class="msg"></div>
@@ -193,11 +194,6 @@ function generarDias() {
 
     ruta.value = r;
     contrato.value = c;
-
-    localStorage.setItem("year", y);
-    localStorage.setItem("month", m);
-    localStorage.setItem("ruta", r);
-    localStorage.setItem("contrato", c);
 
     const meses = {"Enero":1,"Febrero":2,"Marzo":3,"Abril":4,"Mayo":5,"Junio":6,"Julio":7,"Agosto":8,"Septiembre":9,"Octubre":10,"Noviembre":11,"Diciembre":12};
     let nMes = meses[m];
@@ -262,17 +258,16 @@ function activarValidaciones() {
 }
 
 
-
-/* 🟦 GUARDAR TODOS LOS DÍAS — campos vacíos = NULL */
+/* 🔵 GUARDAR TODOS LOS DÍAS — VACÍOS = NULL */
 async function guardarDatos() {
 
-    const year = year.value;
-    const month = month.value;
-    const rutaV = ruta.value.toUpperCase();
-    const contratoV = contrato.value.toUpperCase();
-    const obsGeneral = obsGeneral.value.toUpperCase();
+    const yearV = document.getElementById("year").value;
+    const monthV = document.getElementById("month").value;
+    const rutaV = document.getElementById("ruta").value.toUpperCase();
+    const contratoV = document.getElementById("contrato").value.toUpperCase();
+    const obsGeneralV = document.getElementById("obsGeneral").value.toUpperCase();
 
-    if (!year || !month || !rutaV || !contratoV) {
+    if (!yearV || !monthV || !rutaV || !contratoV) {
         alert("TODOS LOS CAMPOS PRINCIPALES SON OBLIGATORIOS");
         return;
     }
@@ -294,15 +289,15 @@ async function guardarDatos() {
         if (obs === "") obs = null;
 
         registros.push({
-            año: parseInt(year),
-            mes: month.toUpperCase(),
+            año: parseInt(yearV),
+            mes: monthV.toUpperCase(),
             numero_ruta: rutaV,
             numero_de_contrato_oc: contratoV,
             fecha_servicio: fechaISO,
             placa_recorrido_1: placa1,
             placa_recorrido_2: placa2,
             observacion: obs,
-            observacion_general: obsGeneral === "" ? null : obsGeneral
+            observacion_general: obsGeneralV === "" ? null : obsGeneralV
         });
 
     });
