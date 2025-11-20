@@ -5,119 +5,125 @@
 <title>Recepción de Certificados</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- 1) CARGAR LA LIBRERÍA SUPABASE v2 -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-    
+<!-- 2) CONEXIÓN A SUPABASE (CORRECTA) -->
+<script>
+    const SUPABASE_URL = "https://vdsqkhajbfevpgeuvfbd.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZkc3FraGFqYmZldnBnZXV2ZmJkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM2MDg3MTIsImV4cCI6MjA3OTE4NDcxMn0.OexzIcRC_F7pnFijSQGZVpXN1xdsDw8zuGR1gFHTyuI";
+
+    // ✔ CORRECTO para la versión 2
+    const supabase = Supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    console.log("🔥 Conectado a Supabase correctamente");
+</script>
+
+
 <style>
 
-    body {
-        font-family: Arial;
-        background: #eef1f7;
-        margin: 0;
-        padding: 0;
-    }
+    body {
+        font-family: Arial;
+        background: #eef1f7;
+        margin: 0;
+        padding: 0;
+    }
 
-    h1 {
-        text-align: center;
-        background: #3155ff;
-        color: white;
-        padding: 20px;
-        margin: 0;
-        font-size: 26px;
-    }
+    h1 {
+        text-align: center;
+        background: #3155ff;
+        color: white;
+        padding: 20px;
+        margin: 0;
+        font-size: 26px;
+    }
 
-    .container {
-        width: 95%;
-        max-width: 1100px; 
-        margin: 20px auto;
-        background: white;
-        padding: 20px;
-        border-radius: 10px;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-    }
+    .container {
+        width: 95%;
+        max-width: 1100px; 
+        margin: 20px auto;
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
 
-    label {
-        font-weight: bold;
-        margin-top: 10px;
-        display: block;
-    }
+    label {
+        font-weight: bold;
+        margin-top: 10px;
+        display: block;
+    }
 
-    select, input {
-        width: 100%;
-        padding: 10px;
-        border-radius: 6px;
-        border: 1px solid #ccc;
-        text-transform: uppercase;
-        font-size: 16px;
-        box-sizing: border-box; 
-    }
+    select, input {
+        width: 100%;
+        padding: 10px;
+        border-radius: 6px;
+        border: 1px solid #ccc;
+        text-transform: uppercase;
+        font-size: 16px;
+        box-sizing: border-box; 
+    }
 
-    .btn {
-        width: 100%;
-        padding: 12px;
-        background: #3155ff;
-        color: white;
-        border-radius: 6px;
-        border: none;
-        font-size: 18px;
-        cursor: pointer;
-        margin-top: 15px;
-    }
-    
-    #daysContainer {
-        margin-top: 25px; 
-    }
+    .btn {
+        width: 100%;
+        padding: 12px;
+        background: #3155ff;
+        color: white;
+        border-radius: 6px;
+        border: none;
+        font-size: 18px;
+        cursor: pointer;
+        margin-top: 15px;
+    }
+    
+    #daysContainer {
+        margin-top: 25px; 
+    }
 
-    /* AJUSTE CLAVE PARA FIJAR EL ENCABEZADO */
-    .header-row {
-        font-weight: bold;
-        padding: 10px 0;
-        margin-bottom: 5px;
-        border-bottom: 2px solid #3155ff;
-        color: #3155ff;
-        align-items: center;
-        
-        /* PROPIEDADES STICKY */
-        position: sticky; 
-        top: 0px; 
-        background-color: white; 
-        z-index: 10; 
-        padding-top: 15px; 
-    }
-    
-    /* Estructura de columnas */
-    .row, .header-row {
-        display: grid;
-        grid-template-columns: 180px 1fr 1fr 1.5fr; 
-        gap: 15px;
-        padding-right: 15px;
-    }
+    .header-row {
+        font-weight: bold;
+        padding: 10px 0;
+        margin-bottom: 5px;
+        border-bottom: 2px solid #3155ff;
+        color: #3155ff;
+        align-items: center;
+        position: sticky; 
+        top: 0px;
+        background-color: white;
+        z-index: 10;
+        padding-top: 15px;
+    }
+    
+    .row, .header-row {
+        display: grid;
+        grid-template-columns: 180px 1fr 1fr 1.5fr; 
+        gap: 15px;
+        padding-right: 15px;
+    }
 
-    /* Estilo para cada fila de datos */
-    .row {
-        margin-bottom: 10px;
-        padding: 10px;
-        border: 1px solid #ddd; 
-        border-radius: 8px;
-        align-items: center; 
-    }
+    .row {
+        margin-bottom: 10px;
+        padding: 10px;
+        border: 1px solid #ddd; 
+        border-radius: 8px;
+        align-items: center; 
+    }
 
-    /* Estilo específico para el div de la fecha */
-    .row > div:first-child {
-        text-align: center; 
-    }
+    .row > div:first-child {
+        text-align: center; 
+    }
 
-    .msg {
-        font-size: 12px;
-        color: red;
-        margin-top: 2px;
-        text-align: left;
-    }
+    .msg {
+        font-size: 12px;
+        color: red;
+        margin-top: 2px;
+        text-align: left;
+    }
 
-    .generalBox {
-        width: 100%;
-        margin-top: 25px;
-    }
+    .generalBox {
+        width: 100%;
+        margin-top: 25px;
+    }
 </style>
 
 </head>
@@ -127,151 +133,139 @@
 
 <div class="container">
 
-    <label>Año:</label>
-    <select id="year">
-        <option value="">Seleccione año</option>
-        <option>2025</option><option>2026</option><option>2027</option>
-    </select>
-    <div id="errorY" class="msg"></div>
+    <label>Año:</label>
+    <select id="year">
+        <option value="">Seleccione año</option>
+        <option>2025</option><option>2026</option><option>2027</option>
+    </select>
+    <div id="errorY" class="msg"></div>
 
-    <label>Mes:</label>
-    <select id="month">
-        <option value="">Seleccione mes</option>
-        <option>Enero</option><option>Febrero</option><option>Marzo</option>
-        <option>Abril</option><option>Mayo</option><option>Junio</option>
-        <option>Julio</option><option>Agosto</option><option>Septiembre</option>
-        <option>Octubre</option><option>Noviembre</option><option>Diciembre</option>
-    </select>
-    <div id="errorM" class="msg"></div>
+    <label>Mes:</label>
+    <select id="month">
+        <option value="">Seleccione mes</option>
+        <option>Enero</option><option>Febrero</option><option>Marzo</option>
+        <option>Abril</option><option>Mayo</option><option>Junio</option>
+        <option>Julio</option><option>Agosto</option><option>Septiembre</option>
+        <option>Octubre</option><option>Noviembre</option><option>Diciembre</option>
+    </select>
+    <div id="errorM" class="msg"></div>
 
-    <label>Número de Ruta:</label>
-    <input id="ruta" placeholder="Ejemplo: Y-001">
-    <div id="errorR" class="msg"></div>
+    <label>Número de Ruta:</label>
+    <input id="ruta" placeholder="Ejemplo: Y-001">
+    <div id="errorR" class="msg"></div>
 
-    <button class="btn" onclick="generarDias()">Generar días del mes</button>
+    <button class="btn" onclick="generarDias()">Generar días del mes</button>
 
-    <div id="daysContainer"></div>
+    <div id="daysContainer"></div>
 
-    <label>Observación General:</label>
-    <textarea class="generalBox" id="obsGeneral" rows="4" style="resize:none; text-transform:uppercase;"></textarea>
+    <label>Observación General:</label>
+    <textarea class="generalBox" id="obsGeneral" rows="4" style="resize:none; text-transform:uppercase;"></textarea>
 
-    <button class="btn" onclick="guardarDatos()">GUARDAR DATOS</button>
+    <button class="btn" onclick="guardarDatos()">GUARDAR DATOS</button>
 
 </div>
 
 <script>
-// --- CÓDIGO DE CONEXIÓN DE SUPABASE ---
-// Como el script de la librería tiene 'defer', Supabase ya estará definido aquí.
-const SUPABASE_URL = "https://vdsqkhajbfevpgeuvfbd.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...";
-
-const supabase = Supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-console.log("🔥 Conectado a Supabase correctamente");
-// --------------------------------------------------
-
-
 const placasValidas = ["AAA111","BBB222","CCC333","EEE444"];
 
 function generarDias() {
-    let y = year.value, m = month.value, r = ruta.value.toUpperCase().trim();
+    let y = year.value, m = month.value, r = ruta.value.toUpperCase().trim();
 
-    errorY.innerHTML = "";
-    errorM.innerHTML = "";
-    errorR.innerHTML = "";
+    errorY.innerHTML = "";
+    errorM.innerHTML = "";
+    errorR.innerHTML = "";
 
-    let err = false;
+    let err = false;
 
-    if (!y) { errorY.innerHTML = "Año obligatorio"; err = true; }
-    if (!m) { errorM.innerHTML = "Mes obligatorio"; err = true; }
+    if (!y) { errorY.innerHTML = "Año obligatorio"; err = true; }
+    if (!m) { errorM.innerHTML = "Mes obligatorio"; err = true; }
 
-    let regRuta = /^[A-Z]-[A-Z0-9]+$/;
-    if (!regRuta.test(r)) {
-        errorR.innerHTML = "Formato inválido (Ej: Y-001)";
-        err = true;
-    }
+    let regRuta = /^[A-Z]-[A-Z0-9]+$/;
+    if (!regRuta.test(r)) {
+        errorR.innerHTML = "Formato inválido (Ej: Y-001)";
+        err = true;
+    }
 
-    if (err) return;
+    if (err) return;
 
-    ruta.value = r;
-    localStorage.setItem("year", y);
-    localStorage.setItem("month", m);
-    localStorage.setItem("ruta", r);
+    ruta.value = r;
+    localStorage.setItem("year", y);
+    localStorage.setItem("month", m);
+    localStorage.setItem("ruta", r);
 
-    const meses = {"Enero":1,"Febrero":2,"Marzo":3,"Abril":4,"Mayo":5,"Junio":6,"Julio":7,"Agosto":8,"Septiembre":9,"Octubre":10,"Noviembre":11,"Diciembre":12};
-    let nMes = meses[m];
-    let dias = new Date(y, nMes, 0).getDate();
+    const meses = {"Enero":1,"Febrero":2,"Marzo":3,"Abril":4,"Mayo":5,"Junio":6,
+                   "Julio":7,"Agosto":8,"Septiembre":9,"Octubre":10,"Noviembre":11,"Diciembre":12};
+    let nMes = meses[m];
+    let dias = new Date(y, nMes, 0).getDate();
 
-    daysContainer.innerHTML = "";
+    daysContainer.innerHTML = "";
 
-    // Fila de encabezados de la tabla
-    daysContainer.innerHTML += `
-        <div class="header-row">
-            <div>FECHA DE SERVICIO</div>
-            <div>PLACA RECORRIDO 1</div>
-            <div>PLACA RECORRIDO 2</div>
-            <div>OBSERVACIÓN</div>
-        </div>
-    `;
-    
-    // Generación de las filas de datos
-    for (let d = 1; d <= dias; d++) {
-        let fecha = `${d}/${nMes}/${y}`;
+    daysContainer.innerHTML += `
+        <div class="header-row">
+            <div>FECHA DE SERVICIO</div>
+            <div>PLACA RECORRIDO 1</div>
+            <div>PLACA RECORRIDO 2</div>
+            <div>OBSERVACIÓN</div>
+        </div>
+    `;
+    
+    for (let d = 1; d <= dias; d++) {
+        let fecha = `${d}/${nMes}/${y}`;
 
-        daysContainer.innerHTML += `
-            <div class="row">
-                <div><b>${fecha}</b></div>
+        daysContainer.innerHTML += `
+            <div class="row">
+                <div><b>${fecha}</b></div>
 
-                <div>
-                    <input class="placa" data-dia="${d}" placeholder="PLACA 1">
-                    <div class="msg" id="msg1-${d}"></div>
-                </div>
+                <div>
+                    <input class="placa" data-dia="${d}" placeholder="PLACA 1">
+                    <div class="msg" id="msg1-${d}"></div>
+                </div>
 
-                <div>
-                    <input class="placa" data-dia2="${d}" placeholder="PLACA 2">
-                    <div class="msg" id="msg2-${d}"></div>
-                </div>
+                <div>
+                    <input class="placa" data-dia2="${d}" placeholder="PLACA 2">
+                    <div class="msg" id="msg2-${d}"></div>
+                </div>
 
-                <div>
-                    <input class="obs" data-obs="${d}" placeholder="OBSERVACIÓN">
-                </div>
-            </div>
-        `;
-    }
+                <div>
+                    <input class="obs" data-obs="${d}" placeholder="OBSERVACIÓN">
+                </div>
+            </div>
+        `;
+    }
 
-    activarValidaciones();
+    activarValidaciones();
 }
 
 function activarValidaciones() {
-    document.querySelectorAll(".placa").forEach(inp => {
-        inp.addEventListener("input", function() {
-            let val = this.value.toUpperCase().replace(/[^A-Z0-9]/g, "");
-            this.value = val;
+    document.querySelectorAll(".placa").forEach(inp => {
+        inp.addEventListener("input", function() {
+            let val = this.value.toUpperCase().replace(/[^A-Z0-9]/g, "");
+            this.value = val;
 
-            let id = this.dataset.dia ? `msg1-${this.dataset.dia}` : `msg2-${this.dataset.dia2}`;
-            let msgBox = document.getElementById(id);
+            let id = this.dataset.dia ? `msg1-${this.dataset.dia}` : `msg2-${this.dataset.dia2}`;
+            let msgBox = document.getElementById(id);
 
-            let formato = /^[A-Z]{3}[0-9]{3}$/;
+            let formato = /^[A-Z]{3}[0-9]{3}$/;
 
-            if (!formato.test(val)) {
-                msgBox.textContent = "REVISAR O CARGAR";
-            } else if (!placasValidas.includes(val)) {
-                msgBox.textContent = "REVISAR O CARGAR";
-            } else {
-                msgBox.textContent = "";
-            }
-        });
-    });
+            if (!formato.test(val)) {
+                msgBox.textContent = "REVISAR O CARGAR";
+            } else if (!placasValidas.includes(val)) {
+                msgBox.textContent = "REVISAR O CARGAR";
+            } else {
+                msgBox.textContent = "";
+            }
+        });
+    });
 }
 
 function guardarDatos() {
-    alert("¡Datos listos para ser guardados! Agrega tu lógica de envío aquí.");
+    alert("¡Datos listos para ser guardados! Agrega tu lógica de envío aquí.");
 }
 
 window.onload = function() {
-    if (localStorage.getItem("year")) year.value = localStorage.getItem("year");
-    if (localStorage.getItem("month")) month.value = localStorage.getItem("month");
-    if (localStorage.getItem("ruta")) ruta.value = localStorage.getItem("ruta");
+    if (localStorage.getItem("year")) year.value = localStorage.getItem("year");
+    if (localStorage.getItem("month")) month.value = localStorage.getItem("month");
+    if (localStorage.getItem("ruta")) ruta.value = localStorage.getItem("ruta");
 };
 </script>
 
