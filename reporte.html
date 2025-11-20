@@ -164,7 +164,7 @@ async function generarReporte() {
             fechaServicioFormateada = `${p[2]}-${p[1]}-${p[0]}`;
         }
         
-        // Retorna un nuevo objeto con el orden de columnas deseado
+        // 💥 Retorna un nuevo objeto con el orden de columnas deseado y los nuevos campos
         return {
             "ID": row.id,
             "FECHA_CREACION": row.fecha_creacion,
@@ -177,10 +177,9 @@ async function generarReporte() {
             "PLACA_RECORRIDO_2": row.placa_recorrido_2,
             "OBSERVACION_RECORRIDO": row.observacion,
             "OBSERVACION_GENERAL": row.observacion_general,
-            // 💥 Nuevas columnas añadidas
-            "RESPONSABLE": row.responsable || 'N/A',
-            "ESTADO_APROBACION": row.estado_aprobacion || 'N/A'
-            // ==================================
+            // 💥 Nuevas columnas ajustadas al final y usando los nombres de tu DB
+            "RESPONSABLE": row.RESPONSABLE || 'N/A', 
+            "ESTADO": row.ESTADO || 'N/A'
         };
     });
 
