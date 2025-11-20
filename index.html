@@ -5,22 +5,20 @@
 <title>Recepción de Certificados</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<!-- ✔️ SUPABASE JS v1 (FUNCIONA CON SCRIPT NORMAL) -->
+<!-- SUPABASE (versión 1, funciona 100% en HTML) -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@1.35.7"></script>
 
-<!-- ✔️ CONEXIÓN A SUPABASE (SIN ERRORES) -->
 <script>
     const SUPABASE_URL = "https://vdsqkhajbfevpgeuvfbd.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZkc3FraGFqYmZldnBnZXV2ZmJkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM2MDg3MTIsImV4cCI6MjA3OTE4NDcxMn0.OexzIcRC_F7pnFijSQGZVpXN1xdsDw8zuGR1gFHTyuI";
 
-    // USAMOS "client" PARA EVITAR EL ERROR DE NOMBRE
+    /* ✔ CLIENT (sin choque de nombres) */
     const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     console.log("🔥 Conectado a Supabase correctamente");
 </script>
 
 <style>
-
     body {
         font-family: Arial;
         background: #eef1f7;
@@ -74,10 +72,8 @@
         cursor: pointer;
         margin-top: 15px;
     }
-    
-    #daysContainer {
-        margin-top: 25px; 
-    }
+
+    #daysContainer { margin-top: 25px; }
 
     .header-row {
         font-weight: bold;
@@ -85,14 +81,13 @@
         margin-bottom: 5px;
         border-bottom: 2px solid #3155ff;
         color: #3155ff;
-        align-items: center;
-        position: sticky; 
-        top: 0px;
+        position: sticky;
+        top: 0;
         background-color: white;
         z-index: 10;
         padding-top: 15px;
     }
-    
+
     .row, .header-row {
         display: grid;
         grid-template-columns: 180px 1fr 1fr 1.5fr; 
@@ -108,9 +103,7 @@
         align-items: center; 
     }
 
-    .row > div:first-child {
-        text-align: center; 
-    }
+    .row > div:first-child { text-align: center; }
 
     .msg {
         font-size: 12px;
@@ -122,6 +115,7 @@
     .generalBox {
         width: 100%;
         margin-top: 25px;
+        text-transform: uppercase;
     }
 </style>
 
@@ -158,13 +152,15 @@
     <div id="daysContainer"></div>
 
     <label>Observación General:</label>
-    <textarea class="generalBox" id="obsGeneral" rows="4" style="resize:none; text-transform:uppercase;"></textarea>
+    <textarea class="generalBox" id="obsGeneral" rows="4" style="resize:none;"></textarea>
 
     <button class="btn" onclick="guardarDatos()">GUARDAR DATOS</button>
 
 </div>
 
+
 <script>
+
 const placasValidas = ["AAA111","BBB222","CCC333","EEE444"];
 
 function generarDias() {
@@ -192,14 +188,11 @@ function generarDias() {
     localStorage.setItem("month", m);
     localStorage.setItem("ruta", r);
 
-    const meses = {"Enero":1,"Febrero":2,"Marzo":3,"Abril":4,"Mayo":5,"Junio":6,
-                   "Julio":7,"Agosto":8,"Septiembre":9,"Octubre":10,"Noviembre":11,"Diciembre":12};
+    const meses = {"Enero":1,"Febrero":2,"Marzo":3,"Abril":4,"Mayo":5,"Junio":6,"Julio":7,"Agosto":8,"Septiembre":9,"Octubre":10,"Noviembre":11,"Diciembre":12};
     let nMes = meses[m];
     let dias = new Date(y, nMes, 0).getDate();
 
-    daysContainer.innerHTML = "";
-
-    daysContainer.innerHTML += `
+    daysContainer.innerHTML = `
         <div class="header-row">
             <div>FECHA DE SERVICIO</div>
             <div>PLACA RECORRIDO 1</div>
@@ -257,17 +250,73 @@ function activarValidaciones() {
     });
 }
 
-function guardarDatos() {
-    alert("¡Datos listos para ser guardados! Agrega tu lógica de envío aquí.");
-}
 
-window.onload = function() {
-    if (localStorage.getItem("year")) year.value = localStorage.getItem("year");
-    if (localStorage.getItem("month")) month.value = localStorage.getItem("month");
-    if (localStorage.getItem("ruta")) ruta.value = localStorage.getItem("ruta");
-};
+
+/* 🟦 OPCIÓN C — Guardar TODOS los días, vacíos = NULL */
+async function guardarDatos() {
+
+    const year = document.getElementById("year").value;
+    const month = document.getElementById("month").value;
+    const ruta = document.getElementById("ruta").value.toUpperCase();
+    const obsGeneral = document.getElementById("obsGeneral").value.toUpperCase();
+
+    if (!year || !month || !ruta) {
+        alert("Año, mes y número de ruta son obligatorios");
+        return;
+    }
+
+    const meses = {
+        "ENERO": 1, "FEBRERO": 2, "MARZO": 3, "ABRIL": 4,
+        "MAYO": 5, "JUNIO": 6, "JULIO": 7, "AGOSTO": 8,
+        "SEPTIEMBRE": 9, "OCTUBRE": 10, "NOVIEMBRE": 11, "DICIEMBRE": 12
+    };
+
+    let registros = [];
+
+    document.querySelectorAll(".row").forEach(row => {
+
+        let fechaTexto = row.querySelector("b").innerText; 
+        let [dia, mes, anio] = fechaTexto.split("/");
+        let fechaISO = `${anio}-${String(mes).padStart(2,'0')}-${String(dia).padStart(2,'0')}`;
+
+        let placa1 = row.querySelector("input[data-dia]")?.value || null;
+        let placa2 = row.querySelector("input[data-dia2]")?.value || null;
+        let obs = row.querySelector("input[data-obs]")?.value.toUpperCase() || null;
+
+        if (placa1 === "") placa1 = null;
+        if (placa2 === "") placa2 = null;
+        if (obs === "") obs = null;
+
+        registros.push({
+            año: parseInt(year),
+            mes: month.toUpperCase(),
+            numero_ruta: ruta,
+            fecha_servicio: fechaISO,
+            placa_recorrido_1: placa1,
+            placa_recorrido_2: placa2,
+            observacion: obs,
+            observacion_general: obsGeneral === "" ? null : obsGeneral
+        });
+
+    });
+
+    console.log("📤 Enviando registros a Supabase:", registros);
+
+    const { data, error } = await client
+        .from("recepcion_certificados")
+        .insert(registros);
+
+    if (error) {
+        console.error("❌ ERROR al insertar:", error);
+        alert("Hubo un error al guardar. Revisa consola.");
+        return;
+    }
+
+    console.log("✅ REGISTROS INSERTADOS:", data);
+    alert("Datos guardados correctamente");
+
+}
 </script>
 
 </body>
 </html>
-
