@@ -170,6 +170,8 @@
 <script>
 
 const placasValidas = ["AAA111","BBB222","CCC333","EEE444"];
+// Definimos el patrón de placa aquí para reusarlo
+const formatoPlacaRegExp = /^[A-Z]{3}[0-9]{3}$/;
 
 /* =====================================================
     GENERAR LOS DÍAS
@@ -195,7 +197,7 @@ function generarDias() {
 
     let regRuta = /^[A-Z]-[A-Z0-9]+$/;
     if (!regRuta.test(r)) {
-        errorR.innerHTML = "Formato inválido (Ej: U-001)";
+        errorR.innerHTML = "Formato inválido (Ej: Y-001)";
         err = true;
     }
 
@@ -250,7 +252,7 @@ function generarDias() {
 }
 
 /* =====================================================
-    VALIDAR PLACAS
+    VALIDAR PLACAS EN TIEMPO REAL
 ===================================================== */
 
 function activarValidaciones() {
@@ -264,13 +266,14 @@ function activarValidaciones() {
 
             let id = this.dataset.dia ? `msg1-${this.dataset.dia}` : `msg2-${this.dataset.dia2}`;
             let msgBox = document.getElementById(id);
-
-            let formato = /^[A-Z]{3}[0-9]{3}$/;
-
-            if (!formato.test(val)) {
-                msgBox.textContent = "REVISAR O CARGAR";
+            
+            // Usamos el mismo RegExp que usaremos para guardar
+            if (val.length === 0) {
+                 msgBox.textContent = "";
+            } else if (!formatoPlacaRegExp.test(val)) {
+                msgBox.textContent = "FORMATO: XXX999"; // Mensaje de formato incorrecto
             } else if (!placasValidas.includes(val)) {
-                msgBox.textContent = "REVISAR O CARGAR";
+                msgBox.textContent = "PLACA NO AUTORIZADA"; // O mantenemos el mensaje original
             } else {
                 msgBox.textContent = "";
             }
@@ -292,11 +295,37 @@ async function guardarDatos() {
     const rutaV = ruta.value.toUpperCase();
     const obsGeneralV = obsGeneral.value.toUpperCase();
 
+    // 1. Validación de campos principales
     if (!yearV || !monthV || !contratoV || !rutaV) {
         alert("TODOS LOS CAMPOS PRINCIPALES SON OBLIGATORIOS");
         return;
     }
+    
+    // 2. Validación estricta de formato de placa antes de guardar
+    let errorPlacaEncontrado = false;
+    document.querySelectorAll(".placa").forEach(inp => {
+        let placa = inp.value.toUpperCase().trim();
+        
+        // Solo validamos si la placa NO está vacía
+        if (placa.length > 0) {
+            
+            if (!formatoPlacaRegExp.test(placa)) {
+                errorPlacaEncontrado = true;
+                // Opcionalmente, resaltar el campo con error
+                inp.style.border = '2px solid red'; 
+            } else {
+                // Restaurar el borde si previamente se marcó como error
+                inp.style.border = '1px solid #ccc';
+            }
+        }
+    });
 
+    if (errorPlacaEncontrado) {
+        alert("❌ ERROR: Una o más placas tienen el formato incorrecto. Deben ser 3 letras y 3 números (Ej: XXX999).");
+        return; // Detiene el proceso de guardado
+    }
+
+    // Continuar si todas las validaciones pasan
     let registros = [];
 
     document.querySelectorAll(".row").forEach(row => {
@@ -340,9 +369,7 @@ async function guardarDatos() {
     }
 
     alert("✅ Datos guardados exitosamente en Supabase");
-    // === 🚀 A J U S T E : Recargar la página después de guardar ===
     window.location.reload(); 
-    // =============================================================
 }
 
 </script>
