@@ -403,7 +403,7 @@ async function guardarDatos() {
     const monthV = month.value.toUpperCase();
     const contratoV = contrato.value.toUpperCase();
     const rutaV = ruta.value.toUpperCase();
-    const obsGeneralV = obsGeneral.value.toUpperCase();
+    let obsGeneralV = obsGeneral.value.toUpperCase();
     
     // 2. Validación de campos principales
     if (!responsableV || !yearV || !monthV || !contratoV || !rutaV) {
@@ -435,14 +435,17 @@ async function guardarDatos() {
     // Continuar si todas las validaciones pasan
     let registros = [];
 
+    // Ajustar obsGeneralV si está vacío
+    if (obsGeneralV === "") obsGeneralV = null; 
+
     document.querySelectorAll(".row").forEach(row => {
 
         let fechaTexto = row.querySelector("b").innerText;
         let [dia, mes, anio] = fechaTexto.split("/");
         let fechaISO = `${anio}-${String(mes).padStart(2,'0')}-${String(dia).padStart(2,'0')}`;
 
-        let placa1 = row.querySelector("input[data-dia]")?.value || null;
-        let placa2 = row.querySelector("input[data-dia2]")?.value || null;
+        let placa1 = row.querySelector("input[data-dia]")?.value.toUpperCase() || null;
+        let placa2 = row.querySelector("input[data-dia2]")?.value.toUpperCase() || null;
         let obs = row.querySelector("input[data-obs]")?.value.toUpperCase() || null;
 
         if (placa1 === "") placa1 = null;
@@ -458,9 +461,9 @@ async function guardarDatos() {
             placa_recorrido_1: placa1,
             placa_recorrido_2: placa2,
             observacion: obs,
-            observacion_general: obsGeneralV === "" ? null : obsGeneralV,
-            // 💥 NOMBRES DE COLUMNA AJUSTADOS A LO QUE TIENES EN SUPABASE
-            RESPONSABLE: responsableV,
+            observacion_general: obsGeneralV,
+            // 💥 NOMBRES DE COLUMNA AJUSTADOS A LO QUE TIENES EN SUPABASE (Mayúsculas)
+            RESPONSABLE: responsableV, 
             ESTADO: estadoSeleccionado 
             // ==========================================================
         });
