@@ -5,17 +5,19 @@
 <title>Recepción de Certificados</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <!-- SUPABASE JS -->
+<!-- 1) CARGAR LA LIBRERÍA PRIMERO -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
+<!-- 2) LUEGO tu script que usa Supabase -->
 <script>
     const SUPABASE_URL = "https://vdsqkhajbfevpgeuvfbd.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZkc3FraGFqYmZldnBnZXV2ZmJkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM2MDg3MTIsImV4cCI6MjA3OTE4NDcxMn0.OexzIcRC_F7pnFijSQGZVpXN1xdsDw8zuGR1gFHTyuI";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...";
 
     const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     console.log("🔥 Conectado a Supabase correctamente");
 </script>
+
     
 <style>
 
@@ -276,4 +278,5 @@ window.onload = function() {
 
 </body>
 </html>
+
 
