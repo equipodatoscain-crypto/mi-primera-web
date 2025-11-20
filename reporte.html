@@ -108,10 +108,10 @@
     </select>
 
     <label>Número de Contrato - OC:</label>
-    <input id="contrato" placeholder="Ej: 143289">
+    <input id="contrato" placeholder="Ej: OC-2025-001">
 
     <label>Número de Ruta:</label>
-    <input id="ruta" placeholder="Ej: U-001">
+    <input id="ruta" placeholder="Ej: Y-001">
 
     <button class="btn" onclick="generarReporte()">GENERAR REPORTE (EXCEL)</button>
 
@@ -134,7 +134,6 @@ async function generarReporte() {
     let contratoV = document.getElementById("contrato").value.toUpperCase().trim();
     let rutaV = document.getElementById("ruta").value.toUpperCase().trim();
 
-    // Consulta a Supabase
     let query = client.from("recepcion_certificados").select("*", { head: false });
 
     if (yearV) query = query.eq("año", parseInt(yearV));
@@ -164,7 +163,7 @@ async function generarReporte() {
             fechaServicioFormateada = `${p[2]}-${p[1]}-${p[0]}`;
         }
         
-        // 💥 Retorna un nuevo objeto con el orden de columnas deseado y los nuevos campos
+        // Retorna un nuevo objeto con el orden de columnas deseado y los nuevos campos
         return {
             "ID": row.id,
             "FECHA_CREACION": row.fecha_creacion,
@@ -175,9 +174,9 @@ async function generarReporte() {
             "FECHA_SERVICIO": fechaServicioFormateada,
             "PLACA_RECORRIDO_1": row.placa_recorrido_1,
             "PLACA_RECORRIDO_2": row.placa_recorrido_2,
-            "OBSERVACION_RECORRIDO": row.observacion,
+            "OBSERVACION_RECORRIDO": row.observacion, // Nota: el nombre de la columna en Supabase es "observacion"
             "OBSERVACION_GENERAL": row.observacion_general,
-            // 💥 Nuevas columnas ajustadas al final y usando los nombres de tu DB
+            // Las nuevas columnas que deben coincidir con la base de datos
             "RESPONSABLE": row.RESPONSABLE || 'N/A', 
             "ESTADO": row.ESTADO || 'N/A'
         };
