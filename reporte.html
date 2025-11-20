@@ -104,10 +104,10 @@
     </select>
 
     <label>Número de Contrato - OC:</label>
-    <input id="contrato" placeholder="Ej: 143219">
+    <input id="contrato" placeholder="Ej: OC-2025-001">
 
     <label>Número de Ruta:</label>
-    <input id="ruta" placeholder="Ej: U-001">
+    <input id="ruta" placeholder="Ej: Y-001">
 
     <label>Responsable:</label>
     <input id="responsable" placeholder="Nombre del responsable">
@@ -115,6 +115,7 @@
     <label>Estado:</label>
     <select id="estado">
         <option value="">(Todos)</option>
+        <option>PENDIENTE</option>
         <option>APROBADO</option>
         <option>RECHAZADO</option>
     </select>
@@ -125,37 +126,20 @@
 <script>
 async function generarReporte() {
 
-    // 1. Definimos el orden y los nombres de las columnas de la BD (en minúsculas/snake_case para Supabase).
+    // 1. Definimos el orden y los nombres de las columnas de la BD (en minúsculas/snake_case).
     const dbColumns = [
-        "id",
-        "fecha_creacion",
-        "año",
-        "mes",
-        "numero_de_contrato_oc", 
-        "numero_ruta",
-        "fecha_servicio",
-        "placa_recorrido_1",
-        "placa_recorrido_2",
-        "observacion",           
-        "observacion_general",
-        "responsable",           
-        "estado"                 
+        "id", "fecha_creacion", "año", "mes", "numero_de_contrato_oc", 
+        "numero_ruta", "fecha_servicio", "placa_recorrido_1", "placa_recorrido_2", 
+        "observacion", "observacion_general", "responsable", "estado"                 
     ];
 
     // 2. Mapeamos los nombres de la BD (minúsculas) a los títulos en MAYÚSCULAS para el Excel.
     const excelHeaders = {
-        "id": "ID",
-        "fecha_creacion": "FECHA_CREACION",
-        "año": "AÑO",
-        "mes": "MES",
-        "numero_de_contrato_oc": "NUMERO_DE_CONTRATO_OC",
-        "numero_ruta": "NUMERO_RUTA",
-        "fecha_servicio": "FECHA_SERVICIO",
-        "placa_recorrido_1": "PLACA_RECORRIDO_1",
-        "placa_recorrido_2": "PLACA_RECORRIDO_2",
-        "observacion": "OBSERVACION_RECORRIDO", 
-        "observacion_general": "OBSERVACION_GENERAL",
-        "responsable": "RESPONSABLE",
+        "id": "ID", "fecha_creacion": "FECHA_CREACION", "año": "AÑO", "mes": "MES", 
+        "numero_de_contrato_oc": "NUMERO_DE_CONTRATO_OC", "numero_ruta": "NUMERO_RUTA", 
+        "fecha_servicio": "FECHA_SERVICIO", "placa_recorrido_1": "PLACA_RECORRIDO_1", 
+        "placa_recorrido_2": "PLACA_RECORRIDO_2", "observacion": "OBSERVACION_RECORRIDO", 
+        "observacion_general": "OBSERVACION_GENERAL", "responsable": "RESPONSABLE", 
         "estado": "ESTADO"
     };
 
@@ -168,23 +152,22 @@ async function generarReporte() {
     let estadoV = document.getElementById("estado").value.toUpperCase().trim();           
 
     // CONSULTA INICIAL
-    let query = client.from("recepcion_certificados").select(dbColumns.join(","), { head: false });
+    let query = client.from("recepcion_certificados")
+                      .select(dbColumns.join(","), { head: false })
+                      .range(0, 999999); // <--- AJUSTE CLAVE: Asegura que se traigan todos los registros
 
     // APLICACIÓN DE FILTROS
 
-    // **LÓGICA CORREGIDA PARA EL AÑO (Todos):**
-    const yearNumber = yearV ? Number(yearV) : null; 
-    
-    // Solo aplica el filtro si hay un número válido. Si yearV es "", yearNumber es null y el filtro no se aplica.
-    if (yearNumber && !isNaN(yearNumber)) {
-        query = query.eq("año", yearNumber);
+    // Lógica del Año: Filtra el año como STRING si hay valor, si es (Todos) = "", no aplica el filtro.
+    if (yearV) { 
+        query = query.eq("año", yearV.trim()); 
     }
     
     if (monthV) query = query.eq("mes", monthV.toUpperCase());
     if (contratoV) query = query.eq("numero_de_contrato_oc", contratoV);
     if (rutaV) query = query.eq("numero_ruta", rutaV);
     
-    // Filtros de las nuevas columnas (usando minúsculas)
+    // Filtros de las nuevas columnas
     if (responsableV) query = query.eq("responsable", responsableV); 
     if (estadoV) query = query.eq("estado", estadoV);                 
 
@@ -206,7 +189,6 @@ async function generarReporte() {
         header: dbColumns 
     });
 
-    // Sobrescribimos la primera fila con los títulos en MAYÚSCULAS.
     XLSX.utils.sheet_add_aoa(hoja, [
         dbColumns.map(colName => excelHeaders[colName]) 
     ], { origin: "A1" });
