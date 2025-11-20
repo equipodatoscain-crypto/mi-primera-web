@@ -126,8 +126,8 @@
 <script>
 async function generarReporte() {
 
-    // 1. Definimos el orden y los nombres EXACTOS de las columnas de la BD que queremos.
-    // Usamos Mayúsculas para RESPONSABLE y ESTADO, según tu esquema de Supabase.
+    // 1. Definimos el orden y los nombres de las columnas de la BD (en minúsculas para evitar errores de Supabase).
+    // El orden respeta tu solicitud: id, fecha_creacion, año, mes, numero_de_contrato_oc, ... RESPONSABLE, ESTADO
     const dbColumns = [
         "id",
         "fecha_creacion",
@@ -138,10 +138,10 @@ async function generarReporte() {
         "fecha_servicio",
         "placa_recorrido_1",
         "placa_recorrido_2",
-        "observacion_recorrido",
+        "observacion",           // Observación del recorrido
         "observacion_general",
-        "RESPONSABLE",           
-        "ESTADO"                 
+        "responsable",           // Corregido a minúsculas
+        "estado"                 // Corregido a minúsculas
     ];
 
     // 2. Mapeamos los nombres de la BD a los títulos en MAYÚSCULAS para el Excel.
@@ -155,21 +155,21 @@ async function generarReporte() {
         "fecha_servicio": "FECHA_SERVICIO",
         "placa_recorrido_1": "PLACA_RECORRIDO_1",
         "placa_recorrido_2": "PLACA_RECORRIDO_2",
-        "observacion_recorrido": "OBSERVACION_RECORRIDO",
+        "observacion": "OBSERVACION_RECORRIDO", // Título para la columna 'observacion'
         "observacion_general": "OBSERVACION_GENERAL",
-        "RESPONSABLE": "RESPONSABLE",
-        "ESTADO": "ESTADO"
+        "responsable": "RESPONSABLE",
+        "estado": "ESTADO"
     };
 
-    // CAPTURA DE VALORES DEL FORMULARIO (incluyendo los nuevos filtros)
+    // CAPTURA DE VALORES DEL FORMULARIO
     let yearV = document.getElementById("year").value;
     let monthV = document.getElementById("month").value;
     let contratoV = document.getElementById("contrato").value.toUpperCase().trim();
     let rutaV = document.getElementById("ruta").value.toUpperCase().trim();
-    let responsableV = document.getElementById("responsable").value.toUpperCase().trim(); // Captura Responsable
-    let estadoV = document.getElementById("estado").value.toUpperCase().trim();           // Captura Estado
+    let responsableV = document.getElementById("responsable").value.toUpperCase().trim(); 
+    let estadoV = document.getElementById("estado").value.toUpperCase().trim();           
 
-    // CONSULTA INICIAL: Solo pedimos las columnas definidas en dbColumns
+    // CONSULTA INICIAL: Solicitando columnas específicas a Supabase
     let query = client.from("recepcion_certificados").select(dbColumns.join(","), { head: false });
 
     // APLICACIÓN DE FILTROS
@@ -177,14 +177,16 @@ async function generarReporte() {
     if (monthV) query = query.eq("mes", monthV.toUpperCase());
     if (contratoV) query = query.eq("numero_de_contrato_oc", contratoV);
     if (rutaV) query = query.eq("numero_ruta", rutaV);
-    if (responsableV) query = query.eq("RESPONSABLE", responsableV); // Nuevo filtro (usando nombre de BD en Mayúsculas)
-    if (estadoV) query = query.eq("ESTADO", estadoV);                 // Nuevo filtro (usando nombre de BD en Mayúsculas)
+    
+    // Filtros usando nombres de columna en minúsculas (más seguro para Supabase/PostgreSQL)
+    if (responsableV) query = query.eq("responsable", responsableV); 
+    if (estadoV) query = query.eq("estado", estadoV);                 
 
     const { data, error } = await query;
 
     if (error) {
         console.error("❌ ERROR CONSULTANDO SUPABASE:", error);
-        alert("Error consultando Supabase. Revisa la consola.");
+        alert(`Error consultando Supabase. Revisa la consola para ver el error de la BD: ${error.message}`);
         return;
     }
 
@@ -199,7 +201,7 @@ async function generarReporte() {
         header: dbColumns 
     });
 
-    // 2. Cambiamos los nombres de los encabezados de la primera fila al formato deseado (MAYÚSCULAS)
+    // 2. Sobrescribimos la primera fila con los títulos en MAYÚSCULAS.
     XLSX.utils.sheet_add_aoa(hoja, [
         dbColumns.map(colName => excelHeaders[colName]) 
     ], { origin: "A1" });
