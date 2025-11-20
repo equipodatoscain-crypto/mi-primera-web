@@ -104,11 +104,21 @@
     </select>
 
     <label>Número de Contrato - OC:</label>
-    <input id="contrato" placeholder="Ej: OC-2025-001">
+    <input id="contrato" placeholder="Ej: 143289">
 
     <label>Número de Ruta:</label>
-    <input id="ruta" placeholder="Ej: Y-001">
+    <input id="ruta" placeholder="Ej: U-001">
+    
+    <label>Responsable:</label>
+    <input id="responsable" placeholder="Nombre del responsable">
 
+    <label>Estado:</label>
+    <select id="estado">
+        <option value="">(Todos)</option>
+        <option>PENDIENTE</option>
+        <option>APROBADO</option>
+        <option>RECHAZADO</option>
+    </select>
     <button class="btn" onclick="generarReporte()">GENERAR REPORTE (EXCEL)</button>
 
 </div>
@@ -116,17 +126,24 @@
 <script>
 async function generarReporte() {
 
+    // CAPTURA DE VALORES DEL FORMULARIO
     let yearV = document.getElementById("year").value;
     let monthV = document.getElementById("month").value;
     let contratoV = document.getElementById("contrato").value.toUpperCase().trim();
     let rutaV = document.getElementById("ruta").value.toUpperCase().trim();
+    let responsableV = document.getElementById("responsable").value.toUpperCase().trim(); // Captura Responsable
+    let estadoV = document.getElementById("estado").value.toUpperCase().trim();           // Captura Estado
 
+    // CONSULTA INICIAL
     let query = client.from("recepcion_certificados").select("*", { head: false });
 
+    // APLICACIÓN DE FILTROS
     if (yearV) query = query.eq("año", parseInt(yearV));
     if (monthV) query = query.eq("mes", monthV.toUpperCase());
     if (contratoV) query = query.eq("numero_de_contrato_oc", contratoV);
     if (rutaV) query = query.eq("numero_ruta", rutaV);
+    if (responsableV) query = query.eq("responsable", responsableV); // Nuevo filtro
+    if (estadoV) query = query.eq("estado", estadoV);                 // Nuevo filtro
 
     const { data, error } = await query;
 
@@ -141,8 +158,8 @@ async function generarReporte() {
         return;
     }
 
-    // Definimos el orden de las columnas (cabeceras) que queremos en el Excel.
-    // **NOTA:** Los nombres deben coincidir exactamente con los nombres de las columnas en tu base de datos Supabase.
+    // --- CONFIGURACIÓN DE EXCEL ---
+    // 1. Definimos el orden de las columnas (cabeceras) de la BD para el Excel.
     const headers = [
         "id",
         "fecha_creacion",
@@ -155,12 +172,11 @@ async function generarReporte() {
         "placa_recorrido_2",
         "observacion_recorrido",
         "observacion_general",
-        "responsable", // Nueva columna
-        "estado"       // Nueva columna
+        "responsable", 
+        "estado"       
     ];
 
-    // Mapeamos los nombres de las columnas de la BD (minúsculas y snake_case) 
-    // a los nombres que quieres mostrar en el encabezado del Excel (mayúsculas).
+    // 2. Mapeamos los nombres de las columnas de la BD a los títulos en MAYÚSCULAS para el Excel.
     const headerMapping = {
         "id": "ID",
         "fecha_creacion": "FECHA_CREACION",
@@ -177,21 +193,19 @@ async function generarReporte() {
         "estado": "ESTADO"
     };
 
-    // Crear la hoja de cálculo
+    // 3. Crear la hoja de cálculo usando el orden definido
     const hoja = XLSX.utils.json_to_sheet(data, { 
-        header: headers // Usamos la lista de columnas para definir el orden y las que se incluyen
+        header: headers
     });
 
-    // Cambiamos los nombres de los encabezados en la hoja de Excel
+    // 4. Cambiamos los nombres de los encabezados de la primera fila al formato deseado (MAYÚSCULAS)
     XLSX.utils.sheet_add_aoa(hoja, [
-        headers.map(h => headerMapping[h]) // Aplicamos el mapeo para usar nombres en mayúsculas
+        headers.map(h => headerMapping[h])
     ], { origin: "A1" });
 
-    // Exportar a Excel
+    // 5. Exportar a Excel
     const libro = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(libro, hoja, "Reporte");
-
-    // Descargar archivo
     XLSX.writeFile(libro, "reporte_certificados.xlsx");
 
     alert("Excel generado correctamente ✔");
