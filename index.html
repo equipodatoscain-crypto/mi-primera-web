@@ -5,7 +5,6 @@
 <title>Recepción de Certificados</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<!-- SUPABASE versión estable 1.x -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@1.35.7"></script>
 
 <script>
@@ -120,7 +119,6 @@
 </head>
 <body>
 
-<!-- 🟢 BOTÓN REPORTE ARRIBA A LA DERECHA -->
 <div style="width:95%; max-width:1100px; margin:15px auto 0 auto; text-align:right;">
     <button onclick="window.location.href='reporte.html'" 
             style="background:#28a745; color:white; padding:10px 20px; 
@@ -174,7 +172,7 @@
 const placasValidas = ["AAA111","BBB222","CCC333","EEE444"];
 
 /* =====================================================
-   GENERAR LOS DÍAS
+    GENERAR LOS DÍAS
 ===================================================== */
 
 function generarDias() {
@@ -197,7 +195,7 @@ function generarDias() {
 
     let regRuta = /^[A-Z]-[A-Z0-9]+$/;
     if (!regRuta.test(r)) {
-        errorR.innerHTML = "Formato inválido (Ej: Y-001)";
+        errorR.innerHTML = "Formato inválido (Ej: U-001)";
         err = true;
     }
 
@@ -252,7 +250,7 @@ function generarDias() {
 }
 
 /* =====================================================
-   VALIDAR PLACAS
+    VALIDAR PLACAS
 ===================================================== */
 
 function activarValidaciones() {
@@ -283,7 +281,7 @@ function activarValidaciones() {
 }
 
 /* =====================================================
-   GUARDAR EN SUPABASE
+    GUARDAR EN SUPABASE
 ===================================================== */
 
 async function guardarDatos() {
@@ -342,10 +340,12 @@ async function guardarDatos() {
     }
 
     alert("✅ Datos guardados exitosamente en Supabase");
+    // === 🚀 A J U S T E : Recargar la página después de guardar ===
+    window.location.reload(); 
+    // =============================================================
 }
 
 </script>
 
 </body>
 </html>
-
