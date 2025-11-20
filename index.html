@@ -7,7 +7,7 @@
 
 <style>
     body {
-        font-family: Arial, sans-serif;
+        font-family: Arial;
         background: #eef1f7;
         margin: 0;
         padding: 0;
@@ -15,81 +15,105 @@
 
     h1 {
         text-align: center;
-        color: white;
         background: #3155ff;
-        padding: 18px;
-        margin: 0 0 20px 0;
-        border-radius: 0 0 10px 10px;
+        color: white;
+        padding: 20px;
+        margin: 0;
         font-size: 26px;
     }
 
     .container {
-        max-width: 95%;
+        width: 95%;
+        max-width: 1100px; 
         margin: 20px auto;
-        background: #fff;
-        padding: 25px;
-        border-radius: 12px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.12);
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        /* Importante: Si el contenido es largo, el scroll es en el body, lo cual está bien. */
     }
 
     label {
-        font-size: 18px;
         font-weight: bold;
-        display: block;
         margin-top: 10px;
+        display: block;
     }
 
-    input, select {
+    select, input {
         width: 100%;
-        padding: 12px;
-        font-size: 18px;
-        margin-top: 5px;
-        border-radius: 8px;
+        padding: 10px;
+        border-radius: 6px;
         border: 1px solid #ccc;
-    }
-
-    /* FILAS DE FECHAS Y CAMPOS */
-    .row {
-        display: grid;
-        grid-template-columns: 110px 180px 180px 1fr;
-        gap: 15px;
-        align-items: start;
-        margin-bottom: 18px;
-    }
-
-    .placa {
-        font-size: 18px;
         text-transform: uppercase;
+        font-size: 16px;
+        box-sizing: border-box; 
     }
 
-    .obs {
-        width: 100%;
-        font-size: 18px;
-    }
-
-    /* MENSAJE DE ERROR */
-    .error {
-        color: red;
-        font-size: 14px;
-        text-align: center;
-        margin-top: 4px;
-    }
-
-    /* BOTÓN */
     .btn {
-        margin-top: 15px;
+        width: 100%;
         padding: 12px;
         background: #3155ff;
         color: white;
+        border-radius: 6px;
         border: none;
-        border-radius: 8px;
-        cursor: pointer;
         font-size: 18px;
-        width: 100%;
+        cursor: pointer;
+        margin-top: 15px;
+    }
+    
+    #daysContainer {
+        margin-top: 25px; 
     }
 
-    .btn:hover {
-        background: #1e3fe0;
+    /* AJUSTE CLAVE PARA FIJAR EL ENCABEZADO */
+    .header-row {
+        font-weight: bold;
+        padding: 10px 0;
+        margin-bottom: 5px;
+        border-bottom: 2px solid #3155ff;
+        color: #3155ff;
+        align-items: center;
+        
+        /* PROPIEDADES STICKY */
+        position: sticky; 
+        top: 0px; /* Se detendrá justo arriba del borde de la pantalla */
+        background-color: white; /* Añade un fondo para que tape el contenido de abajo */
+        z-index: 10; /* Asegura que esté por encima de las filas de datos */
+        padding-top: 15px; /* Pequeño espacio extra arriba para que no se pegue al borde */
+    }
+    
+    /* Estructura de columnas */
+    .row, .header-row {
+        display: grid;
+        grid-template-columns: 180px 1fr 1fr 1.5fr; 
+        gap: 15px;
+        padding-right: 15px;
+    }
+
+    /* Estilo para cada fila de datos */
+    .row {
+        margin-bottom: 10px;
+        padding: 10px;
+        border: 1px solid #ddd; 
+        border-radius: 8px;
+        align-items: center; 
+    }
+
+    /* Estilo específico para el div de la fecha */
+    .row > div:first-child {
+        text-align: center; 
+    }
+
+    .msg {
+        font-size: 12px;
+        color: red;
+        margin-top: 2px;
+        text-align: left;
+    }
+
+    .generalBox {
+        width: 100%;
+        margin-top: 25px;
     }
 </style>
 
@@ -103,11 +127,9 @@
     <label>Año:</label>
     <select id="year">
         <option value="">Seleccione año</option>
-        <option>2025</option>
-        <option>2026</option>
-        <option>2027</option>
+        <option>2025</option><option>2026</option><option>2027</option>
     </select>
-    <div id="errYear" class="error"></div>
+    <div id="errorY" class="msg"></div>
 
     <label>Mes:</label>
     <select id="month">
@@ -117,178 +139,126 @@
         <option>Julio</option><option>Agosto</option><option>Septiembre</option>
         <option>Octubre</option><option>Noviembre</option><option>Diciembre</option>
     </select>
-    <div id="errMonth" class="error"></div>
+    <div id="errorM" class="msg"></div>
 
     <label>Número de Ruta:</label>
-    <input id="ruta" placeholder="Ejemplo: U-001" style="text-transform: uppercase;">
-    <div id="errRuta" class="error"></div>
+    <input id="ruta" placeholder="Ejemplo: Y-001">
+    <div id="errorR" class="msg"></div>
 
     <button class="btn" onclick="generarDias()">Generar días del mes</button>
 
     <div id="daysContainer"></div>
+
+    <label>Observación General:</label>
+    <textarea class="generalBox" id="obsGeneral" rows="4" style="resize:none; text-transform:uppercase;"></textarea>
+
+    <button class="btn" onclick="guardarDatos()">GUARDAR DATOS</button>
+
 </div>
 
 <script>
-/* PLACAS PERMITIDAS */
 const placasValidas = ["AAA111","BBB222","CCC333","EEE444"];
 
-/* GENERAR DÍAS */
 function generarDias() {
-    let year = yearEl.value;
-    let month = monthEl.value;
-    let ruta = rutaEl.value.toUpperCase().trim();
+    let y = year.value, m = month.value, r = ruta.value.toUpperCase().trim();
 
-    clearErrors();
+    errorY.innerHTML = "";
+    errorM.innerHTML = "";
+    errorR.innerHTML = "";
 
-    let error = false;
+    let err = false;
 
-    if (!year) {
-        errYear.innerHTML = "El año es obligatorio";
-        error = true;
+    if (!y) { errorY.innerHTML = "Año obligatorio"; err = true; }
+    if (!m) { errorM.innerHTML = "Mes obligatorio"; err = true; }
+
+    let regRuta = /^[A-Z]-[A-Z0-9]+$/;
+    if (!regRuta.test(r)) {
+        errorR.innerHTML = "Formato inválido (Ej: Y-001)";
+        err = true;
     }
 
-    if (!month) {
-        errMonth.innerHTML = "El mes es obligatorio";
-        error = true;
-    }
+    if (err) return;
 
-    // Validar formato ruta
-    if (!/^[A-Z]-[A-Z0-9]+$/.test(ruta)) {
-        errRuta.innerHTML = "Formato inválido. Ejemplo válido: U-001";
-        error = true;
-    }
+    ruta.value = r;
+    localStorage.setItem("year", y);
+    localStorage.setItem("month", m);
+    localStorage.setItem("ruta", r);
 
-    if (error) return;
+    const meses = {"Enero":1,"Febrero":2,"Marzo":3,"Abril":4,"Mayo":5,"Junio":6,"Julio":7,"Agosto":8,"Septiembre":9,"Octubre":10,"Noviembre":11,"Diciembre":12};
+    let nMes = meses[m];
+    let dias = new Date(y, nMes, 0).getDate();
 
-    // Guardar ruta corregida en mayúsculas
-    rutaEl.value = ruta;
+    daysContainer.innerHTML = "";
 
-    // Guardar campos base
-    localStorage.setItem("year", year);
-    localStorage.setItem("month", month);
-    localStorage.setItem("ruta", ruta);
-
-    renderDias(year, month);
-}
-
-function renderDias(year, month) {
-    const monthNum = {
-        "Enero":1,"Febrero":2,"Marzo":3,"Abril":4,"Mayo":5,"Junio":6,
-        "Julio":7,"Agosto":8,"Septiembre":9,"Octubre":10,"Noviembre":11,"Diciembre":12
-    }[month];
-
-    const days = new Date(year, monthNum, 0).getDate();
-    let html = "";
-
-    for (let d = 1; d <= days; d++) {
-        let fecha = `${d}/${monthNum}/${year}`;
-
-        html += `
-        <div class="row">
-            <div><strong>${fecha}</strong></div>
-
-            <div>
-                <input class="placa" data-dia="${d}" data-campo="p1" placeholder="Placa Recorrido 1">
-                <div class="error" id="err-p1-${d}"></div>
-            </div>
-
-            <div>
-                <input class="placa" data-dia="${d}" data-campo="p2" placeholder="Placa Recorrido 2">
-                <div class="error" id="err-p2-${d}"></div>
-            </div>
-
-            <div>
-                <input class="obs" data-dia="${d}" data-campo="obs" placeholder="Observación">
-            </div>
+    // Fila de encabezados de la tabla
+    daysContainer.innerHTML += `
+        <div class="header-row">
+            <div>FECHA DE SERVICIO</div>
+            <div>PLACA RECORRIDO 1</div>
+            <div>PLACA RECORRIDO 2</div>
+            <div>OBSERVACIÓN</div>
         </div>
+    `;
+    
+    // Generación de las filas de datos
+    for (let d = 1; d <= dias; d++) {
+        let fecha = `${d}/${nMes}/${y}`;
+
+        daysContainer.innerHTML += `
+            <div class="row">
+                <div><b>${fecha}</b></div>
+
+                <div>
+                    <input class="placa" data-dia="${d}" placeholder="PLACA 1">
+                    <div class="msg" id="msg1-${d}"></div>
+                </div>
+
+                <div>
+                    <input class="placa" data-dia2="${d}" placeholder="PLACA 2">
+                    <div class="msg" id="msg2-${d}"></div>
+                </div>
+
+                <div>
+                    <input class="obs" data-obs="${d}" placeholder="OBSERVACIÓN">
+                </div>
+            </div>
         `;
     }
 
-    daysContainer.innerHTML = html;
-
     activarValidaciones();
-    restaurarDatos();
 }
 
-/* VALIDACIÓN PLACAS */
 function activarValidaciones() {
-    document.querySelectorAll(".placa").forEach(input => {
-        input.addEventListener("input", function () {
-            let dia = this.dataset.dia;
-            let campo = this.dataset.campo;
+    document.querySelectorAll(".placa").forEach(inp => {
+        inp.addEventListener("input", function() {
+            let val = this.value.toUpperCase().replace(/[^A-Z0-9]/g, "");
+            this.value = val;
 
-            let limpio = this.value.toUpperCase()
-                .replace(/\s/g,"")
-                .replace(/-/g,"")
-                .replace(/,/g,"");
+            let id = this.dataset.dia ? `msg1-${this.dataset.dia}` : `msg2-${this.dataset.dia2}`;
+            let msgBox = document.getElementById(id);
 
-            this.value = limpio;
+            let formato = /^[A-Z]{3}[0-9]{3}$/;
 
-            let errorBox = document.getElementById(`err-${campo}-${dia}`);
-
-            if (!/^[A-Z]{3}[0-9]{3}$/.test(limpio)) {
-                errorBox.innerHTML = "Formato inválido (AAA111)";
+            if (!formato.test(val)) {
+                msgBox.textContent = "REVISAR O CARGAR";
+            } else if (!placasValidas.includes(val)) {
+                msgBox.textContent = "REVISAR O CARGAR";
+            } else {
+                msgBox.textContent = "";
             }
-            else if (!placasValidas.includes(limpio)) {
-                errorBox.innerHTML = "REVISAR PLACA O CARGAR DOCUMENTOS EN EL DRIVE";
-            }
-            else {
-                errorBox.innerHTML = "";
-            }
-
-            guardarFormulario();
         });
     });
-
-    document.querySelectorAll(".obs").forEach(input => {
-        input.addEventListener("input", guardarFormulario);
-    });
 }
 
-/* GUARDAR FORMULARIO */
-function guardarFormulario() {
-    let datos = {};
-
-    document.querySelectorAll(".placa, .obs").forEach(input => {
-        let key = `${input.dataset.dia}-${input.dataset.campo}`;
-        datos[key] = input.value;
-    });
-
-    localStorage.setItem("formData", JSON.stringify(datos));
+function guardarDatos() {
+    alert("¡Datos listos para ser guardados! Agrega tu lógica de envío aquí.");
 }
 
-/* RESTAURAR DATOS */
-function restaurarDatos() {
-    let datos = JSON.parse(localStorage.getItem("formData") || "{}");
-
-    document.querySelectorAll(".placa, .obs").forEach(input => {
-        let key = `${input.dataset.dia}-${input.dataset.campo}`;
-        if (datos[key]) input.value = datos[key];
-    });
-}
-
-/* LIMPIAR ERRORES */
-function clearErrors() {
-    errYear.innerHTML = "";
-    errMonth.innerHTML = "";
-    errRuta.innerHTML = "";
-}
-
-/* RESTAURAR CAMPOS PRINCIPALES */
-window.onload = function () {
-    if (localStorage.year) yearEl.value = localStorage.year;
-    if (localStorage.month) monthEl.value = localStorage.month;
-    if (localStorage.ruta) rutaEl.value = localStorage.ruta;
+window.onload = function() {
+    if (localStorage.getItem("year")) year.value = localStorage.getItem("year");
+    if (localStorage.getItem("month")) month.value = localStorage.getItem("month");
+    if (localStorage.getItem("ruta")) ruta.value = localStorage.getItem("ruta");
 };
-
-const yearEl = document.getElementById("year");
-const monthEl = document.getElementById("month");
-const rutaEl = document.getElementById("ruta");
-
-const errYear = document.getElementById("errYear");
-const errMonth = document.getElementById("errMonth");
-const errRuta = document.getElementById("errRuta");
-const daysContainer = document.getElementById("daysContainer");
 </script>
 
 </body>
