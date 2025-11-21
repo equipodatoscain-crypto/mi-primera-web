@@ -129,29 +129,44 @@
 </div>
 
 <script>
+// Función para convertir fecha ISO a formato DD-MM-YYYY
+function formatDate(isoString) {
+    if (!isoString) return '';
+    // Extraer solo la parte de la fecha (YYYY-MM-DD)
+    const datePart = isoString.split('T')[0];
+    const parts = datePart.split('-');
+    
+    // Reordenar a DD-MM-YYYY
+    return `${parts[2]}-${parts[1]}-${parts[0]}`; 
+}
+
 async function generarReporteOperativo() {
 
-    // 1. Definición de Columnas de Resumen (BD)
+    // 1. Definición de Columnas de Resumen (BD) y Orden Solicitado
     const dbColumns = [
+        "fecha_creacion",           // ¡Nueva! (Posición 1)
         "año",
         "mes",
         "numero_de_contrato_oc",
         "numero_ruta",
         "responsable",
-        "estado"
+        "estado",
+        "observacion_general"       // ¡Nueva! (Posición Final)
     ];
 
     // 2. Títulos para el Excel
     const excelHeaders = {
+        "fecha_creacion": "fecha_creacion", // Título para la fecha formateada
         "año": "año",
         "mes": "mes",
         "numero_de_contrato_oc": "numero_de_contrato_oc",
         "numero_ruta": "numero_ruta",
         "responsable": "responsable",
-        "estado": "estado"
+        "estado": "estado",
+        "observacion_general": "observacion_general" // Título para la observación
     };
 
-    // Obtención de filtros
+    // Obtención de filtros (El código de filtros no cambia)
     let yearV = document.getElementById("year").value;
     let monthV = document.getElementById("month").value;
     let contratoV = document.getElementById("contrato").value.toUpperCase().trim();
@@ -159,13 +174,12 @@ async function generarReporteOperativo() {
     let responsableV = document.getElementById("responsable").value.toUpperCase().trim();
     let estadoV = document.getElementById("estado").value.toUpperCase().trim();
 
-    // Consulta base: Pidiendo solo las columnas de resumen
+    // Consulta base: Pidiendo las columnas actualizadas
     let query = client
         .from("recepcion_certificados")
-        .select(dbColumns.join(',')) // Solo seleccionamos las 6 columnas
-        .order("año", { ascending: false })
-        .order("mes", { ascending: true })
-        .range(0, 999999); // Usamos rango amplio para evitar límites de paginación
+        .select(dbColumns.join(',')) // Seleccionamos las 8 columnas
+        .order("fecha_creacion", { ascending: false }) // Ordenamos por fecha de creación descendente
+        .range(0, 999999);
 
     // Aplicación de Filtros
     if (yearV) query = query.eq("año", yearV.trim());
@@ -188,23 +202,31 @@ async function generarReporteOperativo() {
         return;
     }
     
-    // --- Post-procesamiento: Eliminar Duplicados ---
+    // 3. Post-procesamiento de datos: Formato de Fecha y Eliminación de Duplicados
+    
     const uniqueKeys = new Set();
-    const datosUnicos = [];
+    const datosUnicosYFormateados = [];
 
     data.forEach(row => {
-        const key = dbColumns.map(col => row[col]).join('|'); 
+        // Formatear la fecha antes de crear la clave única
+        const formattedDate = formatDate(row.fecha_creacion);
+        
+        // Crear una clave única con los valores de las columnas
+        const key = dbColumns.map(col => (col === 'fecha_creacion' ? formattedDate : row[col])).join('|'); 
         
         if (!uniqueKeys.has(key)) {
             uniqueKeys.add(key);
-            datosUnicos.push(row);
+            
+            // Reemplazar la fecha ISO por la fecha formateada en el objeto
+            row.fecha_creacion = formattedDate; 
+            
+            datosUnicosYFormateados.push(row);
         }
     });
 
 
     // --- GENERACIÓN DE EXCEL ---
-    // Usar datosUnicos para la exportación
-    const hoja = XLSX.utils.json_to_sheet(datosUnicos, { 
+    const hoja = XLSX.utils.json_to_sheet(datosUnicosYFormateados, { 
         header: dbColumns // Usamos la lista de la BD para mantener el orden
     });
 
@@ -214,10 +236,9 @@ async function generarReporteOperativo() {
     ], { origin: "A1" });
 
     const libro = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(libro, hoja, "ReporteOperativo"); // Nombre de la Hoja
+    XLSX.utils.book_append_sheet(libro, hoja, "ReporteOperativo"); 
     
-    // Nombre del archivo de descarga
-    XLSX.writeFile(libro, "reporte_operativo_certificados.xlsx"); // <-- AJUSTE DE NOMBRE
+    XLSX.writeFile(libro, "reporte_operativo_certificados.xlsx");
 
     alert("✔ Reporte Operativo generado correctamente");
 }
