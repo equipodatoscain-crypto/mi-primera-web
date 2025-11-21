@@ -14,6 +14,34 @@
         "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZkc3FraGFqYmZldnBnZXV2ZmJkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM2MDg3MTIsImV4cCI6MjA3OTE4NDcxMn0.OexzIcRC_F7pnFijSQGZVpXN1xdsDw8zuGR1gFHTyuI";
 
     const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // ============================================
+    // 🔥 PAGINACIÓN ILIMITADA (igual que Reporte 1)
+    // ============================================
+    async function fetchAllRows() {
+        let page = 0;
+        let rows = [];
+        const limit = 1000;
+
+        while (true) {
+            const { data, error } = await client
+                .from("recepcion_certificados")
+                .select("*")
+                .range(page * limit, page * limit + limit - 1);
+
+            if (error) {
+                console.error(error);
+                break;
+            }
+
+            rows = rows.concat(data);
+
+            if (data.length < limit) break;
+
+            page++;
+        }
+        return rows;
+    }
 </script>
 
 <style>
@@ -128,9 +156,70 @@
 </div>
 
 <script>
+// ========================================================
+// 💜 REPORTE OPERATIVO — 1 FILA POR RUTA + AÑO + MES + FECHA_CREACION
+// ========================================================
 async function generarReporteOperativo() {
 
-    const dbColumns = [
+    // Traer TODO
+    const allData = await fetchAllRows();
+
+    // Filtros
+    const yearV = year.value.trim();
+    const monthV = month.value.trim().toUpperCase();
+    const contratoV = contrato.value.trim().toUpperCase();
+    const rutaV = ruta.value.trim().toUpperCase();
+    const responsableV = responsable.value.trim().toUpperCase();
+    const estadoV = estado.value.trim().toUpperCase();
+
+    // Filtrado manual
+    let filtrados = allData.filter(row => {
+
+        if (yearV && row.año != yearV) return false;
+        if (monthV && row.mes != monthV) return false;
+        if (contratoV && row.numero_de_contrato_oc != contratoV) return false;
+        if (rutaV && row.numero_ruta != rutaV) return false;
+        if (responsableV && row.responsable != responsableV) return false;
+        if (estadoV && row.estado != estadoV) return false;
+
+        return true;
+    });
+
+    if (filtrados.length === 0) {
+        alert("No hay datos para estos filtros.");
+        return;
+    }
+
+    // ============================================================
+    // 🚀 AGRUPACIÓN CORRECTA:
+    // SOLO una fila por:
+    //    fecha_creacion + año + mes + numero_ruta
+    // ============================================================
+    const resumen = {};
+
+    filtrados.forEach(row => {
+        const key = [
+            row.fecha_creacion,
+            row.año,
+            row.mes,
+            row.numero_ruta
+        ].join("|");
+
+        if (!resumen[key]) resumen[key] = row;
+    });
+
+    // Convertir a lista final
+    const salida = Object.values(resumen);
+
+    // Ordenar salida (opcional pero recomendado)
+    salida.sort((a, b) => {
+        if (a.numero_ruta < b.numero_ruta) return -1;
+        if (a.numero_ruta > b.numero_ruta) return 1;
+        return 0;
+    });
+
+    // Columnas finales
+    const columnas = [
         "fecha_creacion",
         "año",
         "mes",
@@ -141,85 +230,17 @@ async function generarReporteOperativo() {
         "observacion_general"
     ];
 
-    const excelHeaders = {
-        "fecha_creacion": "fecha_creacion",
-        "año": "año",
-        "mes": "mes",
-        "numero_de_contrato_oc": "numero_de_contrato_oc",
-        "numero_ruta": "numero_ruta",
-        "responsable": "responsable",
-        "estado": "estado",
-        "observacion_general": "observacion_general"
-    };
-
-    let yearV = document.getElementById("year").value;
-    let monthV = document.getElementById("month").value;
-    let contratoV = document.getElementById("contrato").value.toUpperCase().trim();
-    let rutaV = document.getElementById("ruta").value.toUpperCase().trim();
-    let responsableV = document.getElementById("responsable").value.toUpperCase().trim();
-    let estadoV = document.getElementById("estado").value.toUpperCase().trim();
-
-    let query = client
-        .from("recepcion_certificados")
-        .select(dbColumns.join(','))
-        .order("fecha_creacion", { ascending: false })
-        .range(0, 999999);
-
-    if (yearV) query = query.eq("año", yearV.trim());
-    if (monthV) query = query.eq("mes", monthV.toUpperCase());
-    if (contratoV) query = query.eq("numero_de_contrato_oc", contratoV);
-    if (rutaV) query = query.eq("numero_ruta", rutaV);
-    if (responsableV) query = query.eq("responsable", responsableV);
-    if (estadoV) query = query.eq("estado", estadoV);
-
-    const { data, error } = await query;
-
-    if (error) {
-        alert("❌ Error consultando Supabase.");
-        console.error(error);
-        return;
-    }
-
-    if (data.length === 0) {
-        alert("No hay datos para estos filtros.");
-        return;
-    }
-
-    // --- NUEVA LÓGICA DE RESUMEN ---
-    const resumen = {};
-
-    data.forEach(row => {
-        const key = [
-            row.año,
-            row.mes,
-            row.numero_de_contrato_oc,
-            row.numero_ruta,
-            row.responsable,
-            row.estado
-        ].join('|');
-
-        if (!resumen[key]) {
-            resumen[key] = row;
-        } else {
-            if (row.fecha_creacion > resumen[key].fecha_creacion) {
-                resumen[key] = row;
-            }
-        }
+    // Ordenar filas por columnas
+    const salidaOrdenada = salida.map(row => {
+        const nuevo = {};
+        columnas.forEach(col => nuevo[col] = row[col]);
+        return nuevo;
     });
 
-    const datosUnicos = Object.values(resumen);
-
-    // --- GENERAR EXCEL ---
-    const hoja = XLSX.utils.json_to_sheet(datosUnicos, {
-        header: dbColumns
-    });
-
-    XLSX.utils.sheet_add_aoa(hoja, [
-        dbColumns.map(col => excelHeaders[col])
-    ], { origin: "A1" });
-
+    // Exportar a Excel
+    const hoja = XLSX.utils.json_to_sheet(salidaOrdenada, { header: columnas });
     const libro = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(libro, hoja, "ReporteOperativo");
+    XLSX.utils.book_append_sheet(libro, hoja, "Operativo");
 
     XLSX.writeFile(libro, "reporte_operativo_certificados.xlsx");
 
