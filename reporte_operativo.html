@@ -37,7 +37,7 @@
 
     h1 {
         text-align: center;
-        background: #007bff; /* Color Azul para distinguirlo */
+        background: #8a2be2; /* Morado del botón */
         color: white;
         padding: 18px;
         margin-top: 0;
@@ -62,7 +62,7 @@
     .btn {
         width: 100%;
         padding: 12px;
-        background: #007bff; /* Color Azul */
+        background: #8a2be2; /* Morado del botón */
         color: white;
         border: none;
         border-radius: 6px;
@@ -72,7 +72,7 @@
     }
 
     .btn:hover {
-        background: #0056b3;
+        background: #6a1ba0;
     }
 </style>
 
@@ -81,7 +81,7 @@
 
 <div class="container">
 
-    <h1>📋 Reporte Resumido de Certificados</h1>
+    <h1>📋 Reporte Operativo</h1>
 
     <label>Año:</label>
     <select id="year">
@@ -120,11 +120,12 @@
     <label>Estado:</label>
     <select id="estado">
         <option value="">(Todos)</option>
-         <option>APROBADO</option>
+        <option>PENDIENTE</option>
+        <option>APROBADO</option>
         <option>RECHAZADO</option>
     </select>
 
-    <button class="btn" onclick="generarReporteResumen()">GENERAR REPORTE RESUMEN (EXCEL)</button>
+    <button class="btn" onclick="generarReporteResumen()">GENERAR REPORTE OPERATIVO (EXCEL)</button>
 
 </div>
 
@@ -143,12 +144,12 @@ async function generarReporteResumen() {
 
     // 2. Títulos para el Excel
     const excelHeaders = {
-        "año": "año",
-        "mes": "mes",
-        "numero_de_contrato_oc": "numero_de_contrato_oc",
-        "numero_ruta": "numero_ruta",
-        "responsable": "responsable",
-        "estado": "estado"
+        "año": "AÑO",
+        "mes": "MES",
+        "numero_de_contrato_oc": "NÚMERO DE CONTRATO OC",
+        "numero_ruta": "NÚMERO RUTA",
+        "responsable": "RESPONSABLE",
+        "estado": "ESTADO"
     };
 
     // Obtención de filtros
@@ -159,13 +160,13 @@ async function generarReporteResumen() {
     let responsableV = document.getElementById("responsable").value.toUpperCase().trim();
     let estadoV = document.getElementById("estado").value.toUpperCase().trim();
 
-    // Consulta a la tabla, pidiendo solo las columnas de resumen
+    // Consulta base: Pidiendo solo las columnas de resumen
     let query = client
         .from("recepcion_certificados")
         .select(dbColumns.join(',')) // Solo seleccionamos las 6 columnas
         .order("año", { ascending: false })
         .order("mes", { ascending: true })
-        .range(0, 999999);
+        .range(0, 999999); // Usamos rango amplio para evitar límites de paginación
 
     // Aplicación de Filtros
     if (yearV) query = query.eq("año", yearV.trim());
@@ -189,8 +190,7 @@ async function generarReporteResumen() {
     }
     
     // --- Post-procesamiento: Eliminar Duplicados ---
-    // Como la tabla 'recepcion_certificados' tiene un registro por DÍA/PLACA,
-    // necesitamos agrupar para que solo aparezca una fila por combinación AÑO/MES/CONTRATO/RUTA/RESPONSABLE/ESTADO.
+    // Agrupamos para que solo aparezca una fila por combinación AÑO/MES/CONTRATO/RUTA/RESPONSABLE/ESTADO.
     const uniqueKeys = new Set();
     const datosUnicos = [];
 
@@ -217,11 +217,11 @@ async function generarReporteResumen() {
     ], { origin: "A1" });
 
     const libro = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(libro, hoja, "ReporteResumen");
+    XLSX.utils.book_append_sheet(libro, hoja, "ReporteOperativo");
 
     XLSX.writeFile(libro, "reporte_resumen_certificados.xlsx");
 
-    alert("✔ Reporte generado correctamente");
+    alert("✔ Reporte Operativo generado correctamente");
 }
 </script>
 
