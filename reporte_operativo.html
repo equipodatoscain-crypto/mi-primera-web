@@ -6,7 +6,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@1.35.7"></script>
-
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
 <script>
@@ -37,7 +36,7 @@
 
     h1 {
         text-align: center;
-        background: #8a2be2; /* Morado */
+        background: #8a2be2;
         color: white;
         padding: 18px;
         margin-top: 0;
@@ -62,7 +61,7 @@
     .btn {
         width: 100%;
         padding: 12px;
-        background: #8a2be2; /* Morado */
+        background: #8a2be2;
         color: white;
         border: none;
         border-radius: 6px;
@@ -129,44 +128,30 @@
 </div>
 
 <script>
-// Función para convertir fecha ISO a formato DD-MM-YYYY
-function formatDate(isoString) {
-    if (!isoString) return '';
-    // Extraer solo la parte de la fecha (YYYY-MM-DD)
-    const datePart = isoString.split('T')[0];
-    const parts = datePart.split('-');
-    
-    // Reordenar a DD-MM-YYYY
-    return `${parts[2]}-${parts[1]}-${parts[0]}`; 
-}
-
 async function generarReporteOperativo() {
 
-    // 1. Definición de Columnas de Resumen (BD) y Orden Solicitado
     const dbColumns = [
-        "fecha_creacion",           // ¡Nueva! (Posición 1)
+        "fecha_creacion",
         "año",
         "mes",
         "numero_de_contrato_oc",
         "numero_ruta",
         "responsable",
         "estado",
-        "observacion_general"       // ¡Nueva! (Posición Final)
+        "observacion_general"
     ];
 
-    // 2. Títulos para el Excel
     const excelHeaders = {
-        "fecha_creacion": "fecha_creacion", // Título para la fecha formateada
+        "fecha_creacion": "fecha_creacion",
         "año": "año",
         "mes": "mes",
         "numero_de_contrato_oc": "numero_de_contrato_oc",
         "numero_ruta": "numero_ruta",
         "responsable": "responsable",
         "estado": "estado",
-        "observacion_general": "observacion_general" // Título para la observación
+        "observacion_general": "observacion_general"
     };
 
-    // Obtención de filtros (El código de filtros no cambia)
     let yearV = document.getElementById("year").value;
     let monthV = document.getElementById("month").value;
     let contratoV = document.getElementById("contrato").value.toUpperCase().trim();
@@ -174,14 +159,12 @@ async function generarReporteOperativo() {
     let responsableV = document.getElementById("responsable").value.toUpperCase().trim();
     let estadoV = document.getElementById("estado").value.toUpperCase().trim();
 
-    // Consulta base: Pidiendo las columnas actualizadas
     let query = client
         .from("recepcion_certificados")
-        .select(dbColumns.join(',')) // Seleccionamos las 8 columnas
-        .order("fecha_creacion", { ascending: false }) // Ordenamos por fecha de creación descendente
+        .select(dbColumns.join(','))
+        .order("fecha_creacion", { ascending: false })
         .range(0, 999999);
 
-    // Aplicación de Filtros
     if (yearV) query = query.eq("año", yearV.trim());
     if (monthV) query = query.eq("mes", monthV.toUpperCase());
     if (contratoV) query = query.eq("numero_de_contrato_oc", contratoV);
@@ -192,7 +175,7 @@ async function generarReporteOperativo() {
     const { data, error } = await query;
 
     if (error) {
-        alert("❌ Error consultando Supabase. Revisa la consola.");
+        alert("❌ Error consultando Supabase.");
         console.error(error);
         return;
     }
@@ -201,43 +184,43 @@ async function generarReporteOperativo() {
         alert("No hay datos para estos filtros.");
         return;
     }
-    
-    // 3. Post-procesamiento de datos: Formato de Fecha y Eliminación de Duplicados
-    
-    const uniqueKeys = new Set();
-    const datosUnicosYFormateados = [];
+
+    // --- NUEVA LÓGICA DE RESUMEN ---
+    const resumen = {};
 
     data.forEach(row => {
-        // Formatear la fecha antes de crear la clave única
-        const formattedDate = formatDate(row.fecha_creacion);
-        
-        // Crear una clave única con los valores de las columnas
-        const key = dbColumns.map(col => (col === 'fecha_creacion' ? formattedDate : row[col])).join('|'); 
-        
-        if (!uniqueKeys.has(key)) {
-            uniqueKeys.add(key);
-            
-            // Reemplazar la fecha ISO por la fecha formateada en el objeto
-            row.fecha_creacion = formattedDate; 
-            
-            datosUnicosYFormateados.push(row);
+        const key = [
+            row.año,
+            row.mes,
+            row.numero_de_contrato_oc,
+            row.numero_ruta,
+            row.responsable,
+            row.estado
+        ].join('|');
+
+        if (!resumen[key]) {
+            resumen[key] = row;
+        } else {
+            if (row.fecha_creacion > resumen[key].fecha_creacion) {
+                resumen[key] = row;
+            }
         }
     });
 
+    const datosUnicos = Object.values(resumen);
 
-    // --- GENERACIÓN DE EXCEL ---
-    const hoja = XLSX.utils.json_to_sheet(datosUnicosYFormateados, { 
-        header: dbColumns // Usamos la lista de la BD para mantener el orden
+    // --- GENERAR EXCEL ---
+    const hoja = XLSX.utils.json_to_sheet(datosUnicos, {
+        header: dbColumns
     });
 
-    // Sobrescribir la primera fila con los títulos en MAYÚSCULAS
     XLSX.utils.sheet_add_aoa(hoja, [
-        dbColumns.map(colName => excelHeaders[colName]) 
+        dbColumns.map(col => excelHeaders[col])
     ], { origin: "A1" });
 
     const libro = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(libro, hoja, "ReporteOperativo"); 
-    
+    XLSX.utils.book_append_sheet(libro, hoja, "ReporteOperativo");
+
     XLSX.writeFile(libro, "reporte_operativo_certificados.xlsx");
 
     alert("✔ Reporte Operativo generado correctamente");
