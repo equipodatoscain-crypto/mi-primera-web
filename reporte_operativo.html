@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Reporte de Resumen de Certificados</title>
+<title>Reporte Operativo de Certificados</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@1.35.7"></script>
@@ -37,7 +37,7 @@
 
     h1 {
         text-align: center;
-        background: #8a2be2; /* Morado del botón */
+        background: #8a2be2; /* Morado */
         color: white;
         padding: 18px;
         margin-top: 0;
@@ -62,7 +62,7 @@
     .btn {
         width: 100%;
         padding: 12px;
-        background: #8a2be2; /* Morado del botón */
+        background: #8a2be2; /* Morado */
         color: white;
         border: none;
         border-radius: 6px;
@@ -120,17 +120,16 @@
     <label>Estado:</label>
     <select id="estado">
         <option value="">(Todos)</option>
-        <option>PENDIENTE</option>
         <option>APROBADO</option>
         <option>RECHAZADO</option>
     </select>
 
-    <button class="btn" onclick="generarReporteResumen()">GENERAR REPORTE OPERATIVO (EXCEL)</button>
+    <button class="btn" onclick="generarReporteOperativo()">GENERAR REPORTE OPERATIVO (EXCEL)</button>
 
 </div>
 
 <script>
-async function generarReporteResumen() {
+async function generarReporteOperativo() {
 
     // 1. Definición de Columnas de Resumen (BD)
     const dbColumns = [
@@ -144,12 +143,12 @@ async function generarReporteResumen() {
 
     // 2. Títulos para el Excel
     const excelHeaders = {
-        "año": "AÑO",
-        "mes": "MES",
-        "numero_de_contrato_oc": "NÚMERO DE CONTRATO OC",
-        "numero_ruta": "NÚMERO RUTA",
-        "responsable": "RESPONSABLE",
-        "estado": "ESTADO"
+        "año": "año",
+        "mes": "mes",
+        "numero_de_contrato_oc": "numero_de_contrato_oc",
+        "numero_ruta": "numero_ruta",
+        "responsable": "responsable",
+        "estado": "estado"
     };
 
     // Obtención de filtros
@@ -190,12 +189,10 @@ async function generarReporteResumen() {
     }
     
     // --- Post-procesamiento: Eliminar Duplicados ---
-    // Agrupamos para que solo aparezca una fila por combinación AÑO/MES/CONTRATO/RUTA/RESPONSABLE/ESTADO.
     const uniqueKeys = new Set();
     const datosUnicos = [];
 
     data.forEach(row => {
-        // Crear una clave única con los valores de las 6 columnas
         const key = dbColumns.map(col => row[col]).join('|'); 
         
         if (!uniqueKeys.has(key)) {
@@ -217,9 +214,10 @@ async function generarReporteResumen() {
     ], { origin: "A1" });
 
     const libro = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(libro, hoja, "ReporteOperativo");
-
-    XLSX.writeFile(libro, "reporte_resumen_certificados.xlsx");
+    XLSX.utils.book_append_sheet(libro, hoja, "ReporteOperativo"); // Nombre de la Hoja
+    
+    // Nombre del archivo de descarga
+    XLSX.writeFile(libro, "reporte_operativo_certificados.xlsx"); // <-- AJUSTE DE NOMBRE
 
     alert("✔ Reporte Operativo generado correctamente");
 }
