@@ -17,6 +17,37 @@
         "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZkc3FraGFqYmZldnBnZXV2ZmJkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM2MDg3MTIsImV4cCI6MjA3OTE4NDcxMn0.OexzIcRC_F7pnFijSQGZVpXN1xdsDw8zuGR1gFHTyuI";
 
     const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // 🚀 FUNCIÓN NUEVA — DESCARGAR TODAS LAS FILAS (Paginadas en bloques de 1000)
+    async function fetchAllRows() {
+        let page = 0;
+        let rows = [];
+        let limit = 1000;
+
+        while (true) {
+            const from = page * limit;
+            const to = from + limit - 1;
+
+            const { data, error } = await client
+                .from("recepcion_certificados")
+                .select("*")
+                .order("id", { ascending: true })
+                .range(from, to);
+
+            if (error) {
+                console.error("Error en paginación:", error);
+                break;
+            }
+
+            rows = rows.concat(data);
+
+            if (data.length < limit) break; // Ya no hay más filas
+
+            page++;
+        }
+
+        return rows;
+    }
 </script>
 
 <style>
@@ -134,7 +165,9 @@
 <script>
 async function generarReporte() {
 
-    // Obtención de filtros
+    // 🔥 1) TRAER TODAS LAS FILAS (sin límite)
+    const allData = await fetchAllRows();
+
     let yearV = document.getElementById("year").value;
     let monthV = document.getElementById("month").value;
     let contratoV = document.getElementById("contrato").value.toUpperCase().trim();
@@ -142,28 +175,18 @@ async function generarReporte() {
     let responsableV = document.getElementById("responsable").value.toUpperCase().trim();
     let estadoV = document.getElementById("estado").value.toUpperCase().trim();
 
-    // Consulta base sin restricciones
-    let query = client
-        .from("recepcion_certificados")
-        .select("*")
-        .order("id", { ascending: true })
-        .range(0, 999999);
+    // 🔥 2) FILTRAR MANUALMENTE (ya NO usamos filtros de Supabase)
+    let data = allData.filter(row => {
 
-    // Filtros
-    if (yearV) query = query.eq("año", yearV);
-    if (monthV) query = query.eq("mes", monthV.toUpperCase());
-    if (contratoV) query = query.eq("numero_de_contrato_oc", contratoV);
-    if (rutaV) query = query.eq("numero_ruta", rutaV);
-    if (responsableV) query = query.eq("responsable", responsableV);
-    if (estadoV) query = query.eq("estado", estadoV);
+        if (yearV && row.año != yearV) return false;
+        if (monthV && row.mes != monthV.toUpperCase()) return false;
+        if (contratoV && row.numero_de_contrato_oc != contratoV) return false;
+        if (rutaV && row.numero_ruta != rutaV) return false;
+        if (responsableV && row.responsable != responsableV) return false;
+        if (estadoV && row.estado != estadoV) return false;
 
-    const { data, error } = await query;
-
-    if (error) {
-        alert("❌ Error consultando Supabase");
-        console.error(error);
-        return;
-    }
+        return true;
+    });
 
     if (data.length === 0) {
         alert("No hay datos para estos filtros.");
@@ -179,7 +202,6 @@ async function generarReporte() {
         return row;
     });
 
-    // Orden EXACTO solicitado
     const ordenColumnas = [
         "id",
         "fecha_creacion",
@@ -196,14 +218,12 @@ async function generarReporte() {
         "estado"
     ];
 
-    // Reordenar
     const datosOrdenados = convertidos.map(row => {
         const nuevo = {};
         ordenColumnas.forEach(col => nuevo[col] = row[col]);
         return nuevo;
     });
 
-    // Crear Excel
     const hoja = XLSX.utils.json_to_sheet(datosOrdenados);
     const libro = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(libro, hoja, "Reporte");
