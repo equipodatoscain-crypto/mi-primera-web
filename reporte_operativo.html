@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Reporte de Resumen de Certificados</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@1.35.7"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<script>
+    const SUPABASE_URL = "https://vdsqkhajbfevpgeuvfbd.supabase.co";
+    const SUPABASE_ANON_KEY =
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZkc3FraGFqYmZldnBnZXV2ZmJkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM2MDg3MTIsImV4cCI6MjA3OTE4NDcxMn0.OexzIcRC_F7pnFijSQGZVpXN1xdsDw8zuGR1gFHTyuI";
+
+    const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+</script>
+
+<style>
+    body {
+        font-family: Arial;
+        background: #eef1f7;
+        margin: 0;
+        padding: 0;
+    }
+
+    .container {
+        width: 95%;
+        max-width: 700px;
+        background: white;
+        margin: 20px auto;
+        padding: 25px;
+        border-radius: 10px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+
+    h1 {
+        text-align: center;
+        background: #007bff; /* Color Azul para distinguirlo */
+        color: white;
+        padding: 18px;
+        margin-top: 0;
+        border-radius: 0 0 10px 10px;
+    }
+
+    label {
+        font-weight: bold;
+        margin-top: 10px;
+        display: block;
+    }
+
+    select, input {
+        width: 100%;
+        padding: 10px;
+        border-radius: 6px;
+        border: 1px solid #ccc;
+        margin-top: 5px;
+        text-transform: uppercase;
+    }
+
+    .btn {
+        width: 100%;
+        padding: 12px;
+        background: #007bff; /* Color Azul */
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-size: 18px;
+        margin-top: 20px;
+        cursor: pointer;
+    }
+
+    .btn:hover {
+        background: #0056b3;
+    }
+</style>
+
+</head>
+<body>
+
+<div class="container">
+
+    <h1>📋 Reporte Resumido de Certificados</h1>
+
+    <label>Año:</label>
+    <select id="year">
+        <option value="">(Todos)</option>
+        <option>2025</option>
+        <option>2026</option>
+        <option>2027</option>
+    </select>
+
+    <label>Mes:</label>
+    <select id="month">
+        <option value="">(Todos)</option>
+        <option>Enero</option>
+        <option>Febrero</option>
+        <option>Marzo</option>
+        <option>Abril</option>
+        <option>Mayo</option>
+        <option>Junio</option>
+        <option>Julio</option>
+        <option>Agosto</option>
+        <option>Septiembre</option>
+        <option>Octubre</option>
+        <option>Noviembre</option>
+        <option>Diciembre</option>
+    </select>
+
+    <label>Número de Contrato - OC:</label>
+    <input id="contrato" placeholder="Ej: OC-2025-001">
+
+    <label>Número de Ruta:</label>
+    <input id="ruta" placeholder="Ej: Y-001">
+
+    <label>Responsable:</label>
+    <input id="responsable" placeholder="Nombre del responsable">
+
+    <label>Estado:</label>
+    <select id="estado">
+        <option value="">(Todos)</option>
+         <option>APROBADO</option>
+        <option>RECHAZADO</option>
+    </select>
+
+    <button class="btn" onclick="generarReporteResumen()">GENERAR REPORTE RESUMEN (EXCEL)</button>
+
+</div>
+
+<script>
+async function generarReporteResumen() {
+
+    // 1. Definición de Columnas de Resumen (BD)
+    const dbColumns = [
+        "año",
+        "mes",
+        "numero_de_contrato_oc",
+        "numero_ruta",
+        "responsable",
+        "estado"
+    ];
+
+    // 2. Títulos para el Excel
+    const excelHeaders = {
+        "año": "año",
+        "mes": "mes",
+        "numero_de_contrato_oc": "numero_de_contrato_oc",
+        "numero_ruta": "numero_ruta",
+        "responsable": "responsable",
+        "estado": "estado"
+    };
+
+    // Obtención de filtros
+    let yearV = document.getElementById("year").value;
+    let monthV = document.getElementById("month").value;
+    let contratoV = document.getElementById("contrato").value.toUpperCase().trim();
+    let rutaV = document.getElementById("ruta").value.toUpperCase().trim();
+    let responsableV = document.getElementById("responsable").value.toUpperCase().trim();
+    let estadoV = document.getElementById("estado").value.toUpperCase().trim();
+
+    // Consulta a la tabla, pidiendo solo las columnas de resumen
+    let query = client
+        .from("recepcion_certificados")
+        .select(dbColumns.join(',')) // Solo seleccionamos las 6 columnas
+        .order("año", { ascending: false })
+        .order("mes", { ascending: true })
+        .range(0, 999999);
+
+    // Aplicación de Filtros
+    if (yearV) query = query.eq("año", yearV.trim());
+    if (monthV) query = query.eq("mes", monthV.toUpperCase());
+    if (contratoV) query = query.eq("numero_de_contrato_oc", contratoV);
+    if (rutaV) query = query.eq("numero_ruta", rutaV);
+    if (responsableV) query = query.eq("responsable", responsableV);
+    if (estadoV) query = query.eq("estado", estadoV);
+
+    const { data, error } = await query;
+
+    if (error) {
+        alert("❌ Error consultando Supabase. Revisa la consola.");
+        console.error(error);
+        return;
+    }
+
+    if (data.length === 0) {
+        alert("No hay datos para estos filtros.");
+        return;
+    }
+    
+    // --- Post-procesamiento: Eliminar Duplicados ---
+    // Como la tabla 'recepcion_certificados' tiene un registro por DÍA/PLACA,
+    // necesitamos agrupar para que solo aparezca una fila por combinación AÑO/MES/CONTRATO/RUTA/RESPONSABLE/ESTADO.
+    const uniqueKeys = new Set();
+    const datosUnicos = [];
+
+    data.forEach(row => {
+        // Crear una clave única con los valores de las 6 columnas
+        const key = dbColumns.map(col => row[col]).join('|'); 
+        
+        if (!uniqueKeys.has(key)) {
+            uniqueKeys.add(key);
+            datosUnicos.push(row);
+        }
+    });
+
+
+    // --- GENERACIÓN DE EXCEL ---
+    // Usar datosUnicos para la exportación
+    const hoja = XLSX.utils.json_to_sheet(datosUnicos, { 
+        header: dbColumns // Usamos la lista de la BD para mantener el orden
+    });
+
+    // Sobrescribir la primera fila con los títulos en MAYÚSCULAS
+    XLSX.utils.sheet_add_aoa(hoja, [
+        dbColumns.map(colName => excelHeaders[colName]) 
+    ], { origin: "A1" });
+
+    const libro = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(libro, hoja, "ReporteResumen");
+
+    XLSX.writeFile(libro, "reporte_resumen_certificados.xlsx");
+
+    alert("✔ Reporte generado correctamente");
+}
+</script>
+
+</body>
+</html>
