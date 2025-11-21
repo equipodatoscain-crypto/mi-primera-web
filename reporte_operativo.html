@@ -16,7 +16,7 @@
     const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     // ============================================
-    // 🔥 PAGINACIÓN ILIMITADA (igual que Reporte 1)
+    // 🔥 PAGINACIÓN ILIMITADA
     // ============================================
     async function fetchAllRows() {
         let page = 0;
@@ -157,7 +157,8 @@
 
 <script>
 // ========================================================
-// 💜 REPORTE OPERATIVO — 1 FILA POR RUTA + AÑO + MES + FECHA_CREACION
+// 💜 REPORTE OPERATIVO — 1 FILA POR:
+// fecha_creacion + año + mes + numero_ruta + responsable
 // ========================================================
 async function generarReporteOperativo() {
 
@@ -193,7 +194,7 @@ async function generarReporteOperativo() {
     // ============================================================
     // 🚀 AGRUPACIÓN CORRECTA:
     // SOLO una fila por:
-    //    fecha_creacion + año + mes + numero_ruta
+    // fecha_creacion + año + mes + numero_ruta + responsable
     // ============================================================
     const resumen = {};
 
@@ -202,16 +203,16 @@ async function generarReporteOperativo() {
             row.fecha_creacion,
             row.año,
             row.mes,
-            row.numero_ruta
+            row.numero_ruta,
+            row.responsable
         ].join("|");
 
         if (!resumen[key]) resumen[key] = row;
     });
 
-    // Convertir a lista final
     const salida = Object.values(resumen);
 
-    // Ordenar salida (opcional pero recomendado)
+    // Ordenar por ruta
     salida.sort((a, b) => {
         if (a.numero_ruta < b.numero_ruta) return -1;
         if (a.numero_ruta > b.numero_ruta) return 1;
@@ -230,14 +231,13 @@ async function generarReporteOperativo() {
         "observacion_general"
     ];
 
-    // Ordenar filas por columnas
     const salidaOrdenada = salida.map(row => {
         const nuevo = {};
         columnas.forEach(col => nuevo[col] = row[col]);
         return nuevo;
     });
 
-    // Exportar a Excel
+    // Crear Excel
     const hoja = XLSX.utils.json_to_sheet(salidaOrdenada, { header: columnas });
     const libro = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(libro, hoja, "Operativo");
