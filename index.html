@@ -132,10 +132,10 @@
         padding-top: 15px;
     }
 
-    /* ✅ Ahora hay 6 columnas en el grid */
+    /* ✅ 6 columnas */
     .row, .header-row {
         display: grid;
-        grid-template-columns: 140px 1fr 1fr 1fr 1fr 1.2fr; 
+        grid-template-columns: 140px 1fr 1fr 90px 90px 1.2fr; 
         gap: 12px;
         padding-right: 15px;
     }
@@ -163,13 +163,15 @@
         text-transform: uppercase;
     }
 
-    .mini {
-        width: 100%;
-        padding: 10px;
-        border-radius: 6px;
-        border: 1px solid #ccc;
-        font-size: 16px;
-        box-sizing: border-box;
+    /* ✅ Cajita pequeña para X */
+    .ocx {
+      width: 55px !important;
+      text-align: center;
+      font-weight: bold;
+      padding: 8px !important;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      text-transform: uppercase;
     }
 </style>
 
@@ -334,8 +336,8 @@ function generarDias() {
             <div>FECHA</div>
             <div>PLACA R1</div>
             <div>PLACA R2</div>
-            <div>OCUPACION 0 R1</div>
-            <div>OCUPACION 0 R2</div>
+            <div>OCUP. 0 R1</div>
+            <div>OCUP. 0 R2</div>
             <div>OBSERVACIÓN</div>
         </div>
     `;
@@ -358,12 +360,12 @@ function generarDias() {
                     <div class="msg" id="msg2-${d}"></div>
                 </div>
 
-                <div>
-                    <input class="mini ocup" data-oc1="${d}" type="number" placeholder="0">
+                <div style="display:flex; justify-content:center;">
+                    <input class="ocx ocup" data-oc1="${d}" maxlength="1" placeholder="X">
                 </div>
 
-                <div>
-                    <input class="mini ocup" data-oc2="${d}" type="number" placeholder="0">
+                <div style="display:flex; justify-content:center;">
+                    <input class="ocx ocup" data-oc2="${d}" maxlength="1" placeholder="X">
                 </div>
 
                 <div>
@@ -374,6 +376,7 @@ function generarDias() {
     }
 
     activarValidaciones();
+    activarValidacionOcupacionX();
 }
 
 /* =====================================================
@@ -381,9 +384,7 @@ function generarDias() {
 ===================================================== */
 
 function activarValidaciones() {
-
     document.querySelectorAll(".placa").forEach(inp => {
-
         inp.addEventListener("input", function() {
 
             let val = this.value.toUpperCase().replace(/[^A-Z0-9]/g, "");
@@ -402,9 +403,19 @@ function activarValidaciones() {
                 msgBox.textContent = "";
             }
         });
-
     });
+}
 
+/* =====================================================
+    ✅ VALIDAR OCUPACIÓN (SOLO X)
+===================================================== */
+function activarValidacionOcupacionX() {
+    document.querySelectorAll(".ocup").forEach(inp => {
+        inp.addEventListener("input", function () {
+            let v = (this.value || "").toUpperCase().replace(/[^X]/g, "");
+            this.value = v.slice(0, 1);
+        });
+    });
 }
 
 /* =====================================================
@@ -464,7 +475,7 @@ async function guardarDatos() {
         return;
     }
 
-    const idGrupoV = idGrupoData; // bigint
+    const idGrupoV = idGrupoData;
 
     let registros = [];
 
@@ -480,18 +491,19 @@ async function guardarDatos() {
         let placa2 = row.querySelector("input[data-dia2]")?.value.toUpperCase() || null;
         let obs = row.querySelector("input[data-obs]")?.value.toUpperCase() || null;
 
-        const oc1Raw = row.querySelector("input[data-oc1]")?.value;
-        const oc2Raw = row.querySelector("input[data-oc2]")?.value;
+        // ✅ Ocupación X (TEXT)
+        const oc1Raw = (row.querySelector("input[data-oc1]")?.value || "").toUpperCase().trim();
+        const oc2Raw = (row.querySelector("input[data-oc2]")?.value || "").toUpperCase().trim();
 
-        let ocupacion0R1 = (oc1Raw === "" || oc1Raw == null) ? null : Number(oc1Raw);
-        let ocupacion0R2 = (oc2Raw === "" || oc2Raw == null) ? null : Number(oc2Raw);
+        let ocupacion0R1 = (oc1Raw === "X") ? "X" : null;
+        let ocupacion0R2 = (oc2Raw === "X") ? "X" : null;
 
         if (placa1 === "") placa1 = null;
         if (placa2 === "") placa2 = null;
         if (obs === "") obs = null;
 
         registros.push({
-            id_grupo: idGrupoV,                 // ✅ NUEVO
+            id_grupo: idGrupoV,
             año: parseInt(yearV),
             mes: monthV,
             numero_ruta: rutaV,
@@ -499,11 +511,11 @@ async function guardarDatos() {
             fecha_servicio: fechaISO,
             placa_recorrido_1: placa1,
             placa_recorrido_2: placa2,
-            ocupacion_0_r1: ocupacion0R1,       // ✅ NUEVO
-            ocupacion_0_r2: ocupacion0R2,       // ✅ NUEVO
+            ocupacion_0_r1: ocupacion0R1,
+            ocupacion_0_r2: ocupacion0R2,
             observacion: obs,
             observacion_general: obsGeneralV,
-            maximo_transportado: maximoTransportadoV, // ✅ NUEVO
+            maximo_transportado: maximoTransportadoV,
             responsable: responsableV,
             estado: estadoSeleccionado
         });
