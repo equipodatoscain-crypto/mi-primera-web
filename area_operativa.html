@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8" />
-<title>Editar Certificados por ID_GRUPO</title>
+<title>Área Operativa - Editar por ID_GRUPO</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@1.35.7"></script>
@@ -59,9 +59,9 @@
     margin-top: 10px;
   }
 
-  .btnDanger {
-    background: #c82333;
-  }
+  .btnDanger { background: #c82333; }
+  .btnDelete { background: #b00020; }
+  .btnSoft { background: #6c757d; }
 
   .status-buttons {
     display: grid;
@@ -127,7 +127,6 @@
   }
 
   .msg { font-size: 12px; color: red; margin-top: 2px; text-align: left; }
-
   .generalBox { width: 100%; margin-top: 18px; text-transform: uppercase; }
 
   .ocx {
@@ -150,12 +149,19 @@
   }
 
   .hidden { display:none; }
+
+  .actions {
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 10px;
+  }
 </style>
 
 </head>
 <body>
 
-<h1>Editar por ID_GRUPO</h1>
+<h1>Área Operativa - Editar por ID_GRUPO</h1>
 
 <div class="container">
   <div class="rowTop">
@@ -174,14 +180,12 @@
 
     <label>Responsable:</label>
     <input id="responsable" placeholder="Nombre de quien registra">
-    <div id="errorResp" class="msg"></div>
 
     <label>Año:</label>
     <select id="year">
       <option value="">Seleccione año</option>
       <option>2025</option><option>2026</option><option>2027</option>
     </select>
-    <div id="errorY" class="msg"></div>
 
     <label>Mes:</label>
     <select id="month">
@@ -191,17 +195,14 @@
       <option>Julio</option><option>Agosto</option><option>Septiembre</option>
       <option>Octubre</option><option>Noviembre</option><option>Diciembre</option>
     </select>
-    <div id="errorM" class="msg"></div>
 
     <label>Número de Contrato - OC:</label>
     <input id="contrato" placeholder="Ejemplo: 143289">
-    <div id="errorC" class="msg"></div>
 
     <label>Número de Ruta:</label>
     <input id="ruta" placeholder="Ejemplo: U-001">
-    <div id="errorR" class="msg"></div>
 
-    <button class="btn" onclick="generarDias()">🗓️ REGENERAR DÍAS (si cambias año/mes)</button>
+    <button class="btn btnSoft" onclick="generarDias()">🗓️ REGENERAR DÍAS (si cambias año/mes)</button>
 
     <div id="daysContainer"></div>
 
@@ -215,10 +216,14 @@
 
     <div class="status-buttons">
       <button id="btnAprobado" class="btn-estado btn-aprobado" onclick="seleccionarEstado('APROBADO')">✔ APROBADO</button>
-      <button id="btnRechazado" class="btn-estado btn-rechazado" onclick="seleccionarEstado('RECHAZADO')">⚠ RECHAZADO</button>
+      <button id="btnRechazado" class="btn-estado btn-estado btn-rechazado" onclick="seleccionarEstado('RECHAZADO')">⚠ RECHAZADO</button>
     </div>
 
-    <button class="btn btnDanger" onclick="guardarReemplazando()">💾 GUARDAR CAMBIOS (REEMPLAZAR)</button>
+    <!-- ✅ Botones: ELIMINAR + GUARDAR -->
+    <div class="actions">
+      <button class="btn btnDelete" onclick="eliminarGrupo()">🗑️ ELIMINAR GRUPO</button>
+      <button class="btn btnDanger" onclick="guardarReemplazando()">💾 GUARDAR CAMBIOS (REEMPLAZAR)</button>
+    </div>
   </div>
 </div>
 
@@ -226,8 +231,7 @@
 let estadoSeleccionado = null;
 let idGrupoActual = null;
 
-// (si quieres mantener tu lista completa, pégala aquí)
-const placasValidas = ["AAA111", "WNX955"];
+const placasValidas = ["AAA111", "WNX955"]; // pega tu lista completa si quieres
 const formatoPlacaRegExp = /^[A-Z]{3}[0-9]{3}$/;
 
 const mesesMap = {
@@ -340,6 +344,17 @@ function setDiaValue(dia, placa1, placa2, oc1, oc2, obs) {
   if (ob) ob.value = (obs || "");
 }
 
+function getDiaFromFechaServicio(fecha_servicio) {
+  // fecha_servicio puede venir como "2025-10-01"
+  const s = String(fecha_servicio);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return parseInt(s.slice(8,10), 10);
+
+  // fallback
+  const dt = new Date(fecha_servicio);
+  if (!isNaN(dt.getTime())) return dt.getUTCDate();
+  return null;
+}
+
 async function buscarGrupo() {
   msgBuscar.textContent = "";
   panelEdicion.classList.add("hidden");
@@ -369,12 +384,12 @@ async function buscarGrupo() {
     return;
   }
 
-  // Tomar cabecera de la primera fila
+  // Cabecera desde la primera fila
   const first = data[0];
 
   responsable.value = (first.responsable || "");
   year.value = String(first.año || "");
-  month.value = (first.mes || "").toUpperCase(); // en BD está en mayúscula
+  month.value = capitalizar(first.mes || ""); // adapta a las opciones del select
   contrato.value = (first.numero_de_contrato_oc || "");
   ruta.value = (first.numero_ruta || "");
   obsGeneral.value = (first.observacion_general || "");
@@ -387,13 +402,14 @@ async function buscarGrupo() {
   if ((first.estado || "") === "APROBADO") seleccionarEstado("APROBADO");
   if ((first.estado || "") === "RECHAZADO") seleccionarEstado("RECHAZADO");
 
-  // Generar días según año/mes y luego rellenar
+  // ✅ Generar todos los días según el mes/año del grupo
   generarDias();
 
-  // Mapear registros por día del mes
+  // ✅ Rellenar automáticamente TODOS los días que existan en BD
   data.forEach(r => {
-    const fecha = new Date(r.fecha_servicio);
-    const dia = fecha.getUTCDate(); // fecha_servicio es date
+    const dia = getDiaFromFechaServicio(r.fecha_servicio);
+    if (!dia) return;
+
     setDiaValue(
       dia,
       r.placa_recorrido_1,
@@ -404,8 +420,42 @@ async function buscarGrupo() {
     );
   });
 
-  infoGrupo.innerHTML = `<b>ID_GRUPO:</b> ${idGrupoActual} &nbsp; | &nbsp; <b>Filas:</b> ${data.length}`;
+  infoGrupo.innerHTML = `<b>ID_GRUPO:</b> ${idGrupoActual} &nbsp; | &nbsp; <b>Filas en BD:</b> ${data.length}`;
   panelEdicion.classList.remove("hidden");
+}
+
+function capitalizar(txt) {
+  const t = String(txt || "").trim();
+  if (!t) return "";
+  const low = t.toLowerCase();
+  return low.charAt(0).toUpperCase() + low.slice(1);
+}
+
+async function eliminarGrupo() {
+  if (!idGrupoActual) {
+    alert("❌ No hay ID_GRUPO cargado.");
+    return;
+  }
+
+  const ok = confirm(`⚠️ Vas a ELIMINAR TODO el ID_GRUPO ${idGrupoActual}.\n\nEsto NO se puede deshacer.\n\n¿Deseas continuar?`);
+  if (!ok) return;
+
+  const { error } = await client
+    .from("recepcion_certificados")
+    .delete()
+    .eq("id_grupo", idGrupoActual);
+
+  if (error) {
+    console.error("❌ Error eliminando grupo:", error);
+    alert("❌ No se pudo eliminar el grupo. Revisa consola (policies/RLS).");
+    return;
+  }
+
+  alert(`✅ Grupo ${idGrupoActual} eliminado correctamente.`);
+  // limpiar pantalla
+  panelEdicion.classList.add("hidden");
+  idGrupoBuscar.value = "";
+  idGrupoActual = null;
 }
 
 async function guardarReemplazando() {
@@ -414,7 +464,6 @@ async function guardarReemplazando() {
     return;
   }
 
-  // Validación básica
   if (!estadoSeleccionado) {
     errorEstado.textContent = "Debe seleccionar APROBADO o RECHAZADO.";
     alert("❌ Debe seleccionar APROBADO o RECHAZADO.");
@@ -434,11 +483,14 @@ async function guardarReemplazando() {
     alert("❌ Faltan campos principales (Responsable, Año, Mes, Contrato, Ruta).");
     return;
   }
-
   if (obsGeneralV === "") obsGeneralV = null;
 
-  // Armar registros para insertar
   const nMes = mesesMap[monthV];
+  if (!nMes) {
+    alert("❌ Mes inválido.");
+    return;
+  }
+
   const dias = new Date(parseInt(yearV), nMes, 0).getDate();
 
   let registros = [];
@@ -471,7 +523,6 @@ async function guardarReemplazando() {
     });
   }
 
-  // ✅ REEMPLAZAR: DELETE + INSERT
   const ok = confirm(`Vas a REEMPLAZAR todo el ID_GRUPO ${idGrupoActual}.\n\nEsto eliminará las filas actuales y guardará las nuevas.\n\n¿Deseas continuar?`);
   if (!ok) return;
 
@@ -482,7 +533,7 @@ async function guardarReemplazando() {
 
   if (delErr) {
     console.error("❌ Error eliminando grupo:", delErr);
-    alert("❌ No se pudo eliminar el grupo. Revisa consola (policies/RLS).");
+    alert("❌ No se pudo eliminar el grupo antes de guardar. Revisa consola (policies/RLS).");
     return;
   }
 
