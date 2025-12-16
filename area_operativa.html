@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<title>Editar Certificados por ID_GRUPO</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@1.35.7"></script>
+
+<script>
+  const SUPABASE_URL = "https://vdsqkhajbfevpgeuvfbd.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZkc3FraGFqYmZldnBnZXV2ZmJkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM2MDg3MTIsImV4cCI6MjA3OTE4NDcxMn0.OexzIcRC_F7pnFijSQGZVpXN1xdsDw8zuGR1gFHTyuI";
+  const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+</script>
+
+<style>
+  body { font-family: Arial; background: #eef1f7; margin: 0; padding: 0; }
+  h1 { text-align: center; background: #3155ff; color: white; padding: 18px; margin: 0; font-size: 24px; }
+
+  .container {
+    width: 95%;
+    max-width: 1100px;
+    margin: 18px auto;
+    background: white;
+    padding: 18px;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  }
+
+  label { font-weight: bold; margin-top: 10px; display: block; }
+
+  input, select, textarea {
+    width: 100%;
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    font-size: 16px;
+    box-sizing: border-box;
+    text-transform: uppercase;
+  }
+  input[type="number"] { text-transform: none; }
+
+  .rowTop {
+    display: grid;
+    grid-template-columns: 1fr 220px;
+    gap: 12px;
+    align-items: end;
+  }
+
+  .btn {
+    width: 100%;
+    padding: 12px;
+    background: #3155ff;
+    color: white;
+    border-radius: 6px;
+    border: none;
+    font-size: 16px;
+    cursor: pointer;
+    margin-top: 10px;
+  }
+
+  .btnDanger {
+    background: #c82333;
+  }
+
+  .status-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 12px;
+  }
+
+  .btn-estado {
+    width: 100%;
+    padding: 12px;
+    border-radius: 6px;
+    border: 2px solid transparent;
+    font-size: 18px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.2s ease-in-out;
+  }
+  .btn-aprobado { background: #28a745; color: white; }
+  .btn-rechazado { background: #ffc107; color: #343a40; }
+
+  .btn-aprobado.selected {
+    background: #3155ff;
+    color: white;
+    border-color: #3155ff;
+    box-shadow: 0 0 10px rgba(49, 85, 255, 0.7);
+  }
+  .btn-rechazado.selected {
+    background: #e0a800;
+    color: white;
+    border-color: #e0a800;
+    box-shadow: 0 0 10px rgba(224, 168, 0, 0.7);
+  }
+
+  #daysContainer { margin-top: 18px; }
+
+  .header-row {
+    font-weight: bold;
+    padding: 10px 0;
+    margin-bottom: 5px;
+    border-bottom: 2px solid #3155ff;
+    color: #3155ff;
+    position: sticky;
+    top: 0;
+    background-color: white;
+    z-index: 10;
+    padding-top: 15px;
+  }
+
+  .row, .header-row {
+    display: grid;
+    grid-template-columns: 140px 1fr 1fr 90px 90px 1.2fr;
+    gap: 12px;
+    padding-right: 15px;
+  }
+
+  .row {
+    margin-bottom: 10px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    align-items: center;
+  }
+
+  .msg { font-size: 12px; color: red; margin-top: 2px; text-align: left; }
+
+  .generalBox { width: 100%; margin-top: 18px; text-transform: uppercase; }
+
+  .ocx {
+    width: 55px !important;
+    text-align: center;
+    font-weight: bold;
+    padding: 8px !important;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    text-transform: uppercase;
+  }
+
+  .info {
+    background: #f3f6ff;
+    border: 1px solid #cfd8ff;
+    padding: 10px;
+    border-radius: 8px;
+    margin-top: 12px;
+    font-size: 14px;
+  }
+
+  .hidden { display:none; }
+</style>
+
+</head>
+<body>
+
+<h1>Editar por ID_GRUPO</h1>
+
+<div class="container">
+  <div class="rowTop">
+    <div>
+      <label>ID_GRUPO:</label>
+      <input id="idGrupoBuscar" type="number" placeholder="Ejemplo: 12345" />
+      <div id="msgBuscar" class="msg"></div>
+    </div>
+    <div>
+      <button class="btn" onclick="buscarGrupo()">🔎 BUSCAR</button>
+    </div>
+  </div>
+
+  <div id="panelEdicion" class="hidden">
+    <div class="info" id="infoGrupo"></div>
+
+    <label>Responsable:</label>
+    <input id="responsable" placeholder="Nombre de quien registra">
+    <div id="errorResp" class="msg"></div>
+
+    <label>Año:</label>
+    <select id="year">
+      <option value="">Seleccione año</option>
+      <option>2025</option><option>2026</option><option>2027</option>
+    </select>
+    <div id="errorY" class="msg"></div>
+
+    <label>Mes:</label>
+    <select id="month">
+      <option value="">Seleccione mes</option>
+      <option>Enero</option><option>Febrero</option><option>Marzo</option>
+      <option>Abril</option><option>Mayo</option><option>Junio</option>
+      <option>Julio</option><option>Agosto</option><option>Septiembre</option>
+      <option>Octubre</option><option>Noviembre</option><option>Diciembre</option>
+    </select>
+    <div id="errorM" class="msg"></div>
+
+    <label>Número de Contrato - OC:</label>
+    <input id="contrato" placeholder="Ejemplo: 143289">
+    <div id="errorC" class="msg"></div>
+
+    <label>Número de Ruta:</label>
+    <input id="ruta" placeholder="Ejemplo: U-001">
+    <div id="errorR" class="msg"></div>
+
+    <button class="btn" onclick="generarDias()">🗓️ REGENERAR DÍAS (si cambias año/mes)</button>
+
+    <div id="daysContainer"></div>
+
+    <label>Observación General:</label>
+    <textarea class="generalBox" id="obsGeneral" rows="4" style="resize:none;"></textarea>
+
+    <label style="margin-top:15px;">Máximo Transportado:</label>
+    <input id="maximoTransportado" type="number" placeholder="Ejemplo: 1200" />
+
+    <div id="errorEstado" class="msg" style="margin-top:10px; text-align:center;"></div>
+
+    <div class="status-buttons">
+      <button id="btnAprobado" class="btn-estado btn-aprobado" onclick="seleccionarEstado('APROBADO')">✔ APROBADO</button>
+      <button id="btnRechazado" class="btn-estado btn-rechazado" onclick="seleccionarEstado('RECHAZADO')">⚠ RECHAZADO</button>
+    </div>
+
+    <button class="btn btnDanger" onclick="guardarReemplazando()">💾 GUARDAR CAMBIOS (REEMPLAZAR)</button>
+  </div>
+</div>
+
+<script>
+let estadoSeleccionado = null;
+let idGrupoActual = null;
+
+// (si quieres mantener tu lista completa, pégala aquí)
+const placasValidas = ["AAA111", "WNX955"];
+const formatoPlacaRegExp = /^[A-Z]{3}[0-9]{3}$/;
+
+const mesesMap = {
+  "ENERO":1,"FEBRERO":2,"MARZO":3,"ABRIL":4,"MAYO":5,"JUNIO":6,
+  "JULIO":7,"AGOSTO":8,"SEPTIEMBRE":9,"OCTUBRE":10,"NOVIEMBRE":11,"DICIEMBRE":12
+};
+
+function seleccionarEstado(estado) {
+  errorEstado.textContent = "";
+  estadoSeleccionado = estado;
+
+  btnAprobado.classList.remove("selected");
+  btnRechazado.classList.remove("selected");
+
+  if (estado === "APROBADO") btnAprobado.classList.add("selected");
+  if (estado === "RECHAZADO") btnRechazado.classList.add("selected");
+}
+
+function activarValidacionesPlacas() {
+  document.querySelectorAll(".placa").forEach(inp => {
+    inp.addEventListener("input", function() {
+      let val = this.value.toUpperCase().replace(/[^A-Z0-9]/g, "");
+      this.value = val;
+
+      let id = this.dataset.dia ? `msg1-${this.dataset.dia}` : `msg2-${this.dataset.dia2}`;
+      let msgBox = document.getElementById(id);
+
+      if (val.length === 0) msgBox.textContent = "";
+      else if (!formatoPlacaRegExp.test(val)) msgBox.textContent = "FORMATO: XXX999";
+      else if (!placasValidas.includes(val)) msgBox.textContent = "PLACA NO AUTORIZADA";
+      else msgBox.textContent = "";
+    });
+  });
+}
+
+function activarValidacionOcupacionX() {
+  document.querySelectorAll(".ocup").forEach(inp => {
+    inp.addEventListener("input", function() {
+      let v = (this.value || "").toUpperCase().replace(/[^X]/g, "");
+      this.value = v.slice(0, 1);
+    });
+  });
+}
+
+function generarDias() {
+  const y = year.value;
+  const m = month.value;
+  if (!y || !m) return;
+
+  const nMes = mesesMap[m.toUpperCase()];
+  const dias = new Date(parseInt(y), nMes, 0).getDate();
+
+  daysContainer.innerHTML = `
+    <div class="header-row">
+      <div>FECHA</div>
+      <div>PLACA R1</div>
+      <div>PLACA R2</div>
+      <div>OCUP. 0 R1</div>
+      <div>OCUP. 0 R2</div>
+      <div>OBSERVACIÓN</div>
+    </div>
+  `;
+
+  for (let d = 1; d <= dias; d++) {
+    let fecha = `${d}/${nMes}/${y}`;
+    daysContainer.innerHTML += `
+      <div class="row">
+        <div><b>${fecha}</b></div>
+
+        <div>
+          <input class="placa" data-dia="${d}" placeholder="PLACA 1">
+          <div class="msg" id="msg1-${d}"></div>
+        </div>
+
+        <div>
+          <input class="placa" data-dia2="${d}" placeholder="PLACA 2">
+          <div class="msg" id="msg2-${d}"></div>
+        </div>
+
+        <div style="display:flex; justify-content:center;">
+          <input class="ocx ocup" data-oc1="${d}" maxlength="1" placeholder="">
+        </div>
+
+        <div style="display:flex; justify-content:center;">
+          <input class="ocx ocup" data-oc2="${d}" maxlength="1" placeholder="">
+        </div>
+
+        <div>
+          <input class="obs" data-obs="${d}" placeholder="OBSERVACIÓN">
+        </div>
+      </div>
+    `;
+  }
+
+  activarValidacionesPlacas();
+  activarValidacionOcupacionX();
+}
+
+function setDiaValue(dia, placa1, placa2, oc1, oc2, obs) {
+  const p1 = document.querySelector(`input[data-dia="${dia}"]`);
+  const p2 = document.querySelector(`input[data-dia2="${dia}"]`);
+  const o1 = document.querySelector(`input[data-oc1="${dia}"]`);
+  const o2 = document.querySelector(`input[data-oc2="${dia}"]`);
+  const ob = document.querySelector(`input[data-obs="${dia}"]`);
+
+  if (p1) p1.value = (placa1 || "");
+  if (p2) p2.value = (placa2 || "");
+  if (o1) o1.value = (oc1 === "X" ? "X" : "");
+  if (o2) o2.value = (oc2 === "X" ? "X" : "");
+  if (ob) ob.value = (obs || "");
+}
+
+async function buscarGrupo() {
+  msgBuscar.textContent = "";
+  panelEdicion.classList.add("hidden");
+
+  const idg = (idGrupoBuscar.value || "").trim();
+  if (!idg) {
+    msgBuscar.textContent = "Debe ingresar un ID_GRUPO.";
+    return;
+  }
+
+  idGrupoActual = Number(idg);
+
+  const { data, error } = await client
+    .from("recepcion_certificados")
+    .select("*")
+    .eq("id_grupo", idGrupoActual)
+    .order("fecha_servicio", { ascending: true });
+
+  if (error) {
+    console.error("❌ Error buscando id_grupo:", error);
+    msgBuscar.textContent = "Error consultando. Revisa consola.";
+    return;
+  }
+
+  if (!data || data.length === 0) {
+    msgBuscar.textContent = "No se encontraron registros para ese ID_GRUPO.";
+    return;
+  }
+
+  // Tomar cabecera de la primera fila
+  const first = data[0];
+
+  responsable.value = (first.responsable || "");
+  year.value = String(first.año || "");
+  month.value = (first.mes || "").toUpperCase(); // en BD está en mayúscula
+  contrato.value = (first.numero_de_contrato_oc || "");
+  ruta.value = (first.numero_ruta || "");
+  obsGeneral.value = (first.observacion_general || "");
+  maximoTransportado.value = (first.maximo_transportado ?? "");
+
+  // Estado
+  estadoSeleccionado = null;
+  btnAprobado.classList.remove("selected");
+  btnRechazado.classList.remove("selected");
+  if ((first.estado || "") === "APROBADO") seleccionarEstado("APROBADO");
+  if ((first.estado || "") === "RECHAZADO") seleccionarEstado("RECHAZADO");
+
+  // Generar días según año/mes y luego rellenar
+  generarDias();
+
+  // Mapear registros por día del mes
+  data.forEach(r => {
+    const fecha = new Date(r.fecha_servicio);
+    const dia = fecha.getUTCDate(); // fecha_servicio es date
+    setDiaValue(
+      dia,
+      r.placa_recorrido_1,
+      r.placa_recorrido_2,
+      r.ocupacion_0_r1,
+      r.ocupacion_0_r2,
+      r.observacion
+    );
+  });
+
+  infoGrupo.innerHTML = `<b>ID_GRUPO:</b> ${idGrupoActual} &nbsp; | &nbsp; <b>Filas:</b> ${data.length}`;
+  panelEdicion.classList.remove("hidden");
+}
+
+async function guardarReemplazando() {
+  if (!idGrupoActual) {
+    alert("❌ No hay ID_GRUPO cargado.");
+    return;
+  }
+
+  // Validación básica
+  if (!estadoSeleccionado) {
+    errorEstado.textContent = "Debe seleccionar APROBADO o RECHAZADO.";
+    alert("❌ Debe seleccionar APROBADO o RECHAZADO.");
+    return;
+  }
+
+  const responsableV = (responsable.value || "").toUpperCase().trim();
+  const yearV = year.value;
+  const monthV = (month.value || "").toUpperCase().trim();
+  const contratoV = (contrato.value || "").toUpperCase().trim();
+  const rutaV = (ruta.value || "").toUpperCase().trim();
+  let obsGeneralV = (obsGeneral.value || "").toUpperCase().trim();
+  const maximoRaw = (maximoTransportado.value || "").trim();
+  const maximoV = maximoRaw === "" ? null : Number(maximoRaw);
+
+  if (!responsableV || !yearV || !monthV || !contratoV || !rutaV) {
+    alert("❌ Faltan campos principales (Responsable, Año, Mes, Contrato, Ruta).");
+    return;
+  }
+
+  if (obsGeneralV === "") obsGeneralV = null;
+
+  // Armar registros para insertar
+  const nMes = mesesMap[monthV];
+  const dias = new Date(parseInt(yearV), nMes, 0).getDate();
+
+  let registros = [];
+
+  for (let d = 1; d <= dias; d++) {
+    const fechaISO = `${yearV}-${String(nMes).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+
+    const p1 = (document.querySelector(`input[data-dia="${d}"]`)?.value || "").toUpperCase().trim();
+    const p2 = (document.querySelector(`input[data-dia2="${d}"]`)?.value || "").toUpperCase().trim();
+    const o1 = (document.querySelector(`input[data-oc1="${d}"]`)?.value || "").toUpperCase().trim();
+    const o2 = (document.querySelector(`input[data-oc2="${d}"]`)?.value || "").toUpperCase().trim();
+    const ob = (document.querySelector(`input[data-obs="${d}"]`)?.value || "").toUpperCase().trim();
+
+    registros.push({
+      id_grupo: idGrupoActual,
+      año: parseInt(yearV),
+      mes: monthV,
+      numero_ruta: rutaV,
+      numero_de_contrato_oc: contratoV,
+      fecha_servicio: fechaISO,
+      placa_recorrido_1: p1 === "" ? null : p1,
+      placa_recorrido_2: p2 === "" ? null : p2,
+      ocupacion_0_r1: o1 === "X" ? "X" : null,
+      ocupacion_0_r2: o2 === "X" ? "X" : null,
+      observacion: ob === "" ? null : ob,
+      observacion_general: obsGeneralV,
+      maximo_transportado: maximoV,
+      responsable: responsableV,
+      estado: estadoSeleccionado
+    });
+  }
+
+  // ✅ REEMPLAZAR: DELETE + INSERT
+  const ok = confirm(`Vas a REEMPLAZAR todo el ID_GRUPO ${idGrupoActual}.\n\nEsto eliminará las filas actuales y guardará las nuevas.\n\n¿Deseas continuar?`);
+  if (!ok) return;
+
+  const { error: delErr } = await client
+    .from("recepcion_certificados")
+    .delete()
+    .eq("id_grupo", idGrupoActual);
+
+  if (delErr) {
+    console.error("❌ Error eliminando grupo:", delErr);
+    alert("❌ No se pudo eliminar el grupo. Revisa consola (policies/RLS).");
+    return;
+  }
+
+  const { error: insErr } = await client
+    .from("recepcion_certificados")
+    .insert(registros);
+
+  if (insErr) {
+    console.error("❌ Error insertando grupo:", insErr);
+    alert("❌ No se pudo insertar el grupo. Revisa consola.");
+    return;
+  }
+
+  alert(`✅ Grupo ${idGrupoActual} reemplazado correctamente.`);
+}
+</script>
+
+</body>
+</html>
