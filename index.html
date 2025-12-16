@@ -232,7 +232,6 @@
     <label>Observación General:</label>
     <textarea class="generalBox" id="obsGeneral" rows="4" style="resize:none;"></textarea>
 
-    <!-- ✅ NUEVO: MÁXIMO TRANSPORTADO -->
     <label style="margin-top:15px;">Máximo Transportado:</label>
     <input id="maximoTransportado" type="number" placeholder="Ejemplo: 1200">
     <div id="errorMax" class="msg"></div>
@@ -253,18 +252,10 @@
 </div>
 
 <script>
-// 💥 Variable global para rastrear el estado seleccionado
 let estadoSeleccionado = null; 
 
-const placasValidas = [
-"AAA111",
-"WNX955",
-];
+const placasValidas = ["AAA111","WNX955"];
 const formatoPlacaRegExp = /^[A-Z]{3}[0-9]{3}$/;
-
-/* =====================================================
-    GESTIÓN DEL ESTADO APROBADO/RECHAZADO
-===================================================== */
 
 function seleccionarEstado(estado) {
     document.getElementById("errorEstado").textContent = "";
@@ -279,10 +270,6 @@ function seleccionarEstado(estado) {
     if (estado === 'APROBADO') btnAprobado.classList.add('selected');
     if (estado === 'RECHAZADO') btnRechazado.classList.add('selected');
 }
-
-/* =====================================================
-    GENERAR LOS DÍAS
-===================================================== */
 
 function generarDias() {
 
@@ -306,16 +293,11 @@ function generarDias() {
     if (!c) { errorC.innerHTML = "Contrato / OC es obligatorio"; err = true; }
 
     let regRuta = /^[A-Z]-.+$/; 
-    
     if (r.length > 0 && !regRuta.test(r)) { 
         errorR.innerHTML = "Formato inválido. Debe ser: Letra - (y luego cualquier cosa). Ej: U-001";
         err = true;
     }
-    
-    if (r.length === 0) {
-        errorR.innerHTML = "Número de Ruta obligatorio";
-        err = true;
-    }
+    if (r.length === 0) { errorR.innerHTML = "Número de Ruta obligatorio"; err = true; }
 
     if (err) return;
     
@@ -361,11 +343,13 @@ function generarDias() {
                 </div>
 
                 <div style="display:flex; justify-content:center;">
-                    <input class="ocx ocup" data-oc1="${d}" maxlength="1" placeholder="X">
+                    <!-- ✅ sin placeholder X -->
+                    <input class="ocx ocup" data-oc1="${d}" maxlength="1" placeholder="">
                 </div>
 
                 <div style="display:flex; justify-content:center;">
-                    <input class="ocx ocup" data-oc2="${d}" maxlength="1" placeholder="X">
+                    <!-- ✅ sin placeholder X -->
+                    <input class="ocx ocup" data-oc2="${d}" maxlength="1" placeholder="">
                 </div>
 
                 <div>
@@ -379,36 +363,23 @@ function generarDias() {
     activarValidacionOcupacionX();
 }
 
-/* =====================================================
-    VALIDAR PLACAS EN TIEMPO REAL
-===================================================== */
-
 function activarValidaciones() {
     document.querySelectorAll(".placa").forEach(inp => {
         inp.addEventListener("input", function() {
-
             let val = this.value.toUpperCase().replace(/[^A-Z0-9]/g, "");
             this.value = val;
 
             let id = this.dataset.dia ? `msg1-${this.dataset.dia}` : `msg2-${this.dataset.dia2}`;
             let msgBox = document.getElementById(id);
             
-            if (val.length === 0) {
-                 msgBox.textContent = "";
-            } else if (!formatoPlacaRegExp.test(val)) {
-                msgBox.textContent = "FORMATO: XXX999";
-            } else if (!placasValidas.includes(val)) {
-                msgBox.textContent = "PLACA NO AUTORIZADA";
-            } else {
-                msgBox.textContent = "";
-            }
+            if (val.length === 0) msgBox.textContent = "";
+            else if (!formatoPlacaRegExp.test(val)) msgBox.textContent = "FORMATO: XXX999";
+            else if (!placasValidas.includes(val)) msgBox.textContent = "PLACA NO AUTORIZADA";
+            else msgBox.textContent = "";
         });
     });
 }
 
-/* =====================================================
-    ✅ VALIDAR OCUPACIÓN (SOLO X)
-===================================================== */
 function activarValidacionOcupacionX() {
     document.querySelectorAll(".ocup").forEach(inp => {
         inp.addEventListener("input", function () {
@@ -417,10 +388,6 @@ function activarValidacionOcupacionX() {
         });
     });
 }
-
-/* =====================================================
-    GUARDAR EN SUPABASE
-===================================================== */
 
 async function guardarDatos() {
 
@@ -437,7 +404,6 @@ async function guardarDatos() {
     const rutaV = ruta.value.toUpperCase();
     let obsGeneralV = obsGeneral.value.toUpperCase();
 
-    // ✅ Nuevo campo general
     const maximoTransportadoRaw = document.getElementById("maximoTransportado").value;
     let maximoTransportadoV = (maximoTransportadoRaw === "" ? null : Number(maximoTransportadoRaw));
 
@@ -446,17 +412,14 @@ async function guardarDatos() {
         return;
     }
 
-    // Validación formato placas
     let errorPlacaEncontrado = false;
     document.querySelectorAll(".placa").forEach(inp => {
         let placa = inp.value.toUpperCase().trim();
-        if (placa.length > 0) {
-            if (!formatoPlacaRegExp.test(placa)) {
-                errorPlacaEncontrado = true;
-                inp.style.border = '2px solid red'; 
-            } else {
-                inp.style.border = '1px solid #ccc';
-            }
+        if (placa.length > 0 && !formatoPlacaRegExp.test(placa)) {
+            errorPlacaEncontrado = true;
+            inp.style.border = '2px solid red'; 
+        } else {
+            inp.style.border = '1px solid #ccc';
         }
     });
 
@@ -467,11 +430,11 @@ async function guardarDatos() {
 
     if (obsGeneralV === "") obsGeneralV = null;
 
-    // ✅ 1) Pedir un id_grupo para todo el conjunto
-    const { data: idGrupoData, error: idGrupoError } = await client.rpc("get_next_id_grupo");
+    // ✅ Pedir id_grupo (y mostrar el error real en consola)
+    const { data: idGrupoData, error: idGrupoError } = await client.rpc("get_next_id_grupo", {});
     if (idGrupoError) {
         console.error("❌ ERROR obteniendo id_grupo:", idGrupoError);
-        alert("❌ Error obteniendo id_grupo. Revisa la consola.");
+        alert("❌ Error obteniendo id_grupo. Revisa la consola (permiso de función/secuencia).");
         return;
     }
 
@@ -491,7 +454,6 @@ async function guardarDatos() {
         let placa2 = row.querySelector("input[data-dia2]")?.value.toUpperCase() || null;
         let obs = row.querySelector("input[data-obs]")?.value.toUpperCase() || null;
 
-        // ✅ Ocupación X (TEXT)
         const oc1Raw = (row.querySelector("input[data-oc1]")?.value || "").toUpperCase().trim();
         const oc2Raw = (row.querySelector("input[data-oc2]")?.value || "").toUpperCase().trim();
 
