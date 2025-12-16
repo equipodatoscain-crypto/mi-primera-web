@@ -8,390 +8,571 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@1.35.7"></script>
 
 <script>
-  const SUPABASE_URL = "https://vdsqkhajbfevpgeuvfbd.supabase.co";
-  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZkc3FraGFqYmZldnBnZXV2ZmJkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM2MDg3MTIsImV4cCI6MjA3OTE4NDcxMn0.OexzIcRC_F7pnFijSQGZVpXN1xdsDw8zuGR1gFHTyuI";
-  const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  console.log("🔵 Conectado correctamente a Supabase");
+    const SUPABASE_URL = "https://vdsqkhajbfevpgeuvfbd.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZkc3FraGFqYmZldnBnZXV2ZmJkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM2MDg3MTIsImV4cCI6MjA3OTE4NDcxMn0.OexzIcRC_F7pnFijSQGZVpXN1xdsDw8zuGR1gFHTyuI";
+
+    const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    console.log("🔵 Conectado correctamente a Supabase");
 </script>
 
 <style>
-  body { font-family: Arial; background: #eef1f7; margin: 0; padding: 0; }
-  h1 { text-align: center; background: #3155ff; color: white; padding: 20px; margin: 0; font-size: 26px; }
-  .container { width: 95%; max-width: 1100px; margin: 20px auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-  label { font-weight: bold; margin-top: 10px; display: block; }
+    body {
+        font-family: Arial;
+        background: #eef1f7;
+        margin: 0;
+        padding: 0;
+    }
 
-  select, input, textarea {
-    width: 100%;
-    padding: 10px;
-    border-radius: 6px;
-    border: 1px solid #ccc;
-    text-transform: uppercase;
-    font-size: 16px;
-    box-sizing: border-box;
-  }
+    h1 {
+        text-align: center;
+        background: #3155ff;
+        color: white;
+        padding: 20px;
+        margin: 0;
+        font-size: 26px;
+    }
 
-  input[type="number"] { text-transform: none; }
+    .container {
+        width: 95%;
+        max-width: 1100px; 
+        margin: 20px auto;
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
 
-  .btn { width: 100%; padding: 12px; background: #3155ff; color: white; border-radius: 6px; border: none; font-size: 18px; cursor: pointer; margin-top: 15px; transition: background 0.3s; }
+    label {
+        font-weight: bold;
+        margin-top: 10px;
+        display: block;
+    }
 
-  .btn-estado { width: 100%; padding: 12px; border-radius: 6px; border: 2px solid transparent; font-size: 18px; cursor: pointer; font-weight: bold; transition: all 0.2s ease-in-out; }
-  .btn-rechazado { background: #ffc107; color: #343a40; }
-  .btn-aprobado { background: #28a745; color: white; }
-  .btn-aprobado.selected { background: #3155ff; color: white; border-color: #3155ff; box-shadow: 0 0 10px rgba(49, 85, 255, 0.7); }
-  .btn-rechazado.selected { background: #e0a800; color: white; border-color: #e0a800; box-shadow: 0 0 10px rgba(224, 168, 0, 0.7); }
+    select, input, textarea {
+        width: 100%;
+        padding: 10px;
+        border-radius: 6px;
+        border: 1px solid #ccc;
+        text-transform: uppercase;
+        font-size: 16px;
+        box-sizing: border-box;
+    }
 
-  .status-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
+    input[type="number"]{
+        text-transform: none;
+    }
 
-  #daysContainer { margin-top: 25px; }
+    .btn {
+        width: 100%;
+        padding: 12px;
+        background: #3155ff;
+        color: white;
+        border-radius: 6px;
+        border: none;
+        font-size: 18px;
+        cursor: pointer;
+        margin-top: 15px;
+        transition: background 0.3s;
+    }
+    
+    .btn-estado {
+        width: 100%;
+        padding: 12px;
+        border-radius: 6px;
+        border: 2px solid transparent; 
+        font-size: 18px;
+        cursor: pointer;
+        font-weight: bold;
+        transition: all 0.2s ease-in-out;
+    }
+    
+    .btn-rechazado {
+        background: #ffc107; 
+        color: #343a40; 
+    }
 
-  .header-row {
-    font-weight: bold;
-    padding: 10px 0;
-    margin-bottom: 5px;
-    border-bottom: 2px solid #3155ff;
-    color: #3155ff;
-    position: sticky;
-    top: 0;
-    background-color: white;
-    z-index: 10;
-    padding-top: 15px;
-  }
+    .btn-aprobado {
+        background: #28a745; 
+        color: white;
+    }
+    
+    .btn-aprobado.selected {
+        background: #3155ff;
+        color: white;
+        border-color: #3155ff;
+        box-shadow: 0 0 10px rgba(49, 85, 255, 0.7);
+    }
 
-  .row, .header-row {
-    display: grid;
-    grid-template-columns: 140px 1fr 1fr 90px 90px 1.2fr;
-    gap: 12px;
-    padding-right: 15px;
-  }
+    .btn-rechazado.selected {
+        background: #e0a800;
+        color: white;
+        border-color: #e0a800;
+        box-shadow: 0 0 10px rgba(224, 168, 0, 0.7);
+    }
 
-  .row {
-    margin-bottom: 10px;
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    align-items: center;
-  }
+    .status-buttons {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-top: 15px;
+    }
 
-  .row > div:first-child { text-align: center; }
+    #daysContainer { margin-top: 25px; }
 
-  .msg { font-size: 12px; color: red; margin-top: 2px; text-align: left; }
-  .generalBox { width: 100%; margin-top: 25px; text-transform: uppercase; }
+    .header-row {
+        font-weight: bold;
+        padding: 10px 0;
+        margin-bottom: 5px;
+        border-bottom: 2px solid #3155ff;
+        color: #3155ff;
+        position: sticky;
+        top: 0;
+        background-color: white;
+        z-index: 10;
+        padding-top: 15px;
+    }
 
-  /* cajita pequeña para X */
-  .ocx {
-    width: 55px !important;
-    text-align: center;
-    font-weight: bold;
-    padding: 8px !important;
-    border-radius: 6px;
-    border: 1px solid #ccc;
-    text-transform: uppercase;
-  }
+    /* ✅ 6 columnas */
+    .row, .header-row {
+        display: grid;
+        grid-template-columns: 140px 1fr 1fr 90px 90px 1.2fr; 
+        gap: 12px;
+        padding-right: 15px;
+    }
+
+    .row {
+        margin-bottom: 10px;
+        padding: 10px;
+        border: 1px solid #ddd; 
+        border-radius: 8px;
+        align-items: center; 
+    }
+
+    .row > div:first-child { text-align: center; }
+
+    .msg {
+        font-size: 12px;
+        color: red;
+        margin-top: 2px;
+        text-align: left;
+    }
+
+    .generalBox {
+        width: 100%;
+        margin-top: 25px;
+        text-transform: uppercase;
+    }
+
+    /* ✅ Cajita pequeña para X */
+    .ocx {
+      width: 55px !important;
+      text-align: center;
+      font-weight: bold;
+      padding: 8px !important;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      text-transform: uppercase;
+    }
+
+    /* ✅ Barra superior con botones */
+    .topbar {
+        width:95%;
+        max-width:1100px;
+        margin:15px auto 0 auto;
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        gap:10px;
+    }
+
+    .topbar-left, .topbar-right {
+        display:flex;
+        gap:10px;
+        align-items:center;
+    }
+
+    .btn-top {
+        color:white;
+        padding:10px 20px;
+        border:none;
+        border-radius:6px;
+        font-size:16px;
+        cursor:pointer;
+    }
+
+    .btn-area {
+        background:#ffc107; /* amarillo */
+        color:#1f2a37;
+        font-weight:bold;
+    }
+    .btn-operativo { background:#8a2be2; }
+    .btn-financiero { background:#28a745; }
+
+    /* ✅ ocultar página hasta contraseña */
+    body.locked {
+        display:none;
+    }
 </style>
 
+<script>
+/* =====================================================
+   🔒 CONTRASEÑA ANTES DE MOSTRAR LA PÁGINA
+===================================================== */
+(function pedirClaveAntesDeMostrar(){
+    // Oculta todo mientras valida
+    document.addEventListener("DOMContentLoaded", () => {
+        const clave = prompt("Digite su contraseña:");
+        if (clave === "Rutas***#*") {
+            document.body.classList.remove("locked");
+        } else {
+            alert("❌ Contraseña incorrecta.");
+            // No mostrar la página
+            document.body.innerHTML = "";
+            window.location.href = "about:blank";
+        }
+    });
+})();
+</script>
+
 </head>
-<body>
 
-<div style="width:95%; max-width:1100px; margin:15px auto 0 auto; text-align:right;">
-  <button onclick="window.location.href='reporte_operativo.html'"
-          style="background:#8a2be2; color:white; padding:10px 20px; border:none; border-radius:6px; font-size:16px; cursor:pointer; margin-right: 10px;">
-    📋 REPORTE OPERATIVO
-  </button>
+<!-- 🔒 inicia bloqueada -->
+<body class="locked">
 
-  <button onclick="window.location.href='reporte.html'"
-          style="background:#28a745; color:white; padding:10px 20px; border:none; border-radius:6px; font-size:16px; cursor:pointer;">
-    📊 REPORTE FINANCIERO
-  </button>
+<div class="topbar">
+    <!-- ✅ IZQUIERDA: AREA OPERATIVA -->
+    <div class="topbar-left">
+        <button class="btn-top btn-area" onclick="window.location.href='area_operativa.html'">
+            🟡 AREA OPERATIVA
+        </button>
+    </div>
+
+    <!-- ✅ DERECHA: botones existentes -->
+    <div class="topbar-right">
+        <button class="btn-top btn-operativo" onclick="window.location.href='reporte_operativo.html'">
+            📋 REPORTE OPERATIVO
+        </button>
+
+        <button class="btn-top btn-financiero" onclick="window.location.href='reporte.html'">
+            📊 REPORTE FINANCIERO
+        </button>
+    </div>
 </div>
 
 <h1>Recepción de Certificados</h1>
 
 <div class="container">
 
-  <label>Responsable:</label>
-  <input id="responsable" placeholder="Nombre de quien registra">
-  <div id="errorResp" class="msg"></div>
+    <label>Responsable:</label>
+    <input id="responsable" placeholder="Nombre de quien registra">
+    <div id="errorResp" class="msg"></div>
+    
+    <label>Año:</label>
+    <select id="year">
+        <option value="">Seleccione año</option>
+        <option>2025</option><option>2026</option><option>2027</option>
+    </select>
+    <div id="errorY" class="msg"></div>
 
-  <label>Año:</label>
-  <select id="year">
-    <option value="">Seleccione año</option>
-    <option>2025</option><option>2026</option><option>2027</option>
-  </select>
-  <div id="errorY" class="msg"></div>
+    <label>Mes:</label>
+    <select id="month">
+        <option value="">Seleccione mes</option>
+        <option>Enero</option><option>Febrero</option><option>Marzo</option>
+        <option>Abril</option><option>Mayo</option><option>Junio</option>
+        <option>Julio</option><option>Agosto</option><option>Septiembre</option>
+        <option>Octubre</option><option>Noviembre</option><option>Diciembre</option>
+    </select>
+    <div id="errorM" class="msg"></div>
 
-  <label>Mes:</label>
-  <select id="month">
-    <option value="">Seleccione mes</option>
-    <option>Enero</option><option>Febrero</option><option>Marzo</option>
-    <option>Abril</option><option>Mayo</option><option>Junio</option>
-    <option>Julio</option><option>Agosto</option><option>Septiembre</option>
-    <option>Octubre</option><option>Noviembre</option><option>Diciembre</option>
-  </select>
-  <div id="errorM" class="msg"></div>
+    <label>Número de Contrato - OC:</label>
+    <input id="contrato" placeholder="Ejemplo: 143289">
+    <div id="errorC" class="msg"></div>
 
-  <label>Número de Contrato - OC:</label>
-  <input id="contrato" placeholder="Ejemplo: 143289">
-  <div id="errorC" class="msg"></div>
+    <label>Número de Ruta:</label>
+    <input id="ruta" placeholder="Ejemplo: U-001">
+    <div id="errorR" class="msg"></div>
 
-  <label>Número de Ruta:</label>
-  <input id="ruta" placeholder="Ejemplo: U-001">
-  <div id="errorR" class="msg"></div>
+    <button class="btn" onclick="generarDias()">Generar días del mes</button>
 
-  <button class="btn" onclick="generarDias()">Generar días del mes</button>
+    <div id="daysContainer"></div>
 
-  <div id="daysContainer"></div>
+    <label>Observación General:</label>
+    <textarea class="generalBox" id="obsGeneral" rows="4" style="resize:none;"></textarea>
 
-  <label>Observación General:</label>
-  <textarea class="generalBox" id="obsGeneral" rows="4" style="resize:none;"></textarea>
+    <label style="margin-top:15px;">Máximo Transportado:</label>
+    <input id="maximoTransportado" type="number" placeholder="Ejemplo: 1200">
+    <div id="errorMax" class="msg"></div>
 
-  <label style="margin-top:15px;">Máximo Transportado:</label>
-  <input id="maximoTransportado" type="number" placeholder="Ejemplo: 1200">
-  <div id="errorMax" class="msg"></div>
+    <div id="errorEstado" class="msg" style="margin-top:10px; text-align:center;"></div>
 
-  <div id="errorEstado" class="msg" style="margin-top:10px; text-align:center;"></div>
-
-  <div class="status-buttons">
-    <button id="btnAprobado" class="btn-estado btn-aprobado" onclick="seleccionarEstado('APROBADO')">✔ APROBADO</button>
-    <button id="btnRechazado" class="btn-estado btn-rechazado" onclick="seleccionarEstado('RECHAZADO')">⚠ RECHAZADO</button>
-  </div>
-
-  <button class="btn" onclick="guardarDatos()">GUARDAR DATOS</button>
+    <div class="status-buttons">
+        <button id="btnAprobado" class="btn-estado btn-aprobado" onclick="seleccionarEstado('APROBADO')">
+            ✔ APROBADO
+        </button>
+        <button id="btnRechazado" class="btn-estado btn-rechazado" onclick="seleccionarEstado('RECHAZADO')">
+            ⚠ RECHAZADO
+        </button>
+    </div>
+    
+    <button class="btn" onclick="guardarDatos()">GUARDAR DATOS</button>
 
 </div>
 
 <script>
-let estadoSeleccionado = null;
+// 💥 Variable global para rastrear el estado seleccionado
+let estadoSeleccionado = null; 
 
-const placasValidas = ["AAA111", "WNX955"];
+const placasValidas = [
+"AAA111",
+"WNX955",
+];
 const formatoPlacaRegExp = /^[A-Z]{3}[0-9]{3}$/;
 
 function seleccionarEstado(estado) {
-  document.getElementById("errorEstado").textContent = "";
-  estadoSeleccionado = estado;
+    document.getElementById("errorEstado").textContent = "";
+    estadoSeleccionado = estado;
 
-  btnAprobado.classList.remove('selected');
-  btnRechazado.classList.remove('selected');
+    const btnAprobado = document.getElementById("btnAprobado");
+    const btnRechazado = document.getElementById("btnRechazado");
+    
+    btnAprobado.classList.remove('selected');
+    btnRechazado.classList.remove('selected');
 
-  if (estado === 'APROBADO') btnAprobado.classList.add('selected');
-  if (estado === 'RECHAZADO') btnRechazado.classList.add('selected');
+    if (estado === 'APROBADO') btnAprobado.classList.add('selected');
+    if (estado === 'RECHAZADO') btnRechazado.classList.add('selected');
 }
 
 function generarDias() {
-  let y = year.value;
-  let m = month.value;
-  let c = contrato.value.toUpperCase().trim();
-  let r = ruta.value.toUpperCase().trim();
-  let resp = responsable.value.toUpperCase().trim();
 
-  errorResp.innerHTML = "";
-  errorY.innerHTML = "";
-  errorM.innerHTML = "";
-  errorR.innerHTML = "";
-  errorC.innerHTML = "";
+    let y = year.value;
+    let m = month.value;
+    let c = contrato.value.toUpperCase().trim();
+    let r = ruta.value.toUpperCase().trim();
+    let resp = responsable.value.toUpperCase().trim(); 
 
-  let err = false;
+    errorResp.innerHTML = ""; 
+    errorY.innerHTML = "";
+    errorM.innerHTML = "";
+    errorR.innerHTML = "";
+    errorC.innerHTML = "";
 
-  if (!resp) { errorResp.innerHTML = "Responsable obligatorio"; err = true; }
-  if (!y) { errorY.innerHTML = "Año obligatorio"; err = true; }
-  if (!m) { errorM.innerHTML = "Mes obligatorio"; err = true; }
-  if (!c) { errorC.innerHTML = "Contrato / OC es obligatorio"; err = true; }
+    let err = false;
+    
+    if (!resp) { errorResp.innerHTML = "Responsable obligatorio"; err = true; } 
+    if (!y) { errorY.innerHTML = "Año obligatorio"; err = true; }
+    if (!m) { errorM.innerHTML = "Mes obligatorio"; err = true; }
+    if (!c) { errorC.innerHTML = "Contrato / OC es obligatorio"; err = true; }
 
-  let regRuta = /^[A-Z]-.+$/;
-  if (r.length > 0 && !regRuta.test(r)) { errorR.innerHTML = "Formato inválido. Debe ser: Letra - (y luego cualquier cosa). Ej: U-001"; err = true; }
-  if (r.length === 0) { errorR.innerHTML = "Número de Ruta obligatorio"; err = true; }
+    let regRuta = /^[A-Z]-.+$/; 
+    
+    if (r.length > 0 && !regRuta.test(r)) { 
+        errorR.innerHTML = "Formato inválido. Debe ser: Letra - (y luego cualquier cosa). Ej: U-001";
+        err = true;
+    }
+    
+    if (r.length === 0) {
+        errorR.innerHTML = "Número de Ruta obligatorio";
+        err = true;
+    }
 
-  if (err) return;
+    if (err) return;
+    
+    responsable.value = resp;
+    contrato.value = c;
+    ruta.value = r;
 
-  responsable.value = resp;
-  contrato.value = c;
-  ruta.value = r;
+    const meses = {
+        "Enero":1,"Febrero":2,"Marzo":3,"Abril":4,"Mayo":5,"Junio":6,
+        "Julio":7,"Agosto":8,"Septiembre":9,"Octubre":10,"Noviembre":11,"Diciembre":12
+    };
 
-  const meses = { "Enero":1,"Febrero":2,"Marzo":3,"Abril":4,"Mayo":5,"Junio":6,"Julio":7,"Agosto":8,"Septiembre":9,"Octubre":10,"Noviembre":11,"Diciembre":12 };
-  let nMes = meses[m];
-  let dias = new Date(y, nMes, 0).getDate();
+    let nMes = meses[m];
+    let dias = new Date(y, nMes, 0).getDate();
 
-  daysContainer.innerHTML = `
-    <div class="header-row">
-      <div>FECHA</div>
-      <div>PLACA R1</div>
-      <div>PLACA R2</div>
-      <div>OCUP. 0 R1</div>
-      <div>OCUP. 0 R2</div>
-      <div>OBSERVACIÓN</div>
-    </div>
-  `;
-
-  for (let d = 1; d <= dias; d++) {
-    let fecha = `${d}/${nMes}/${y}`;
-
-    daysContainer.innerHTML += `
-      <div class="row">
-        <div><b>${fecha}</b></div>
-
-        <div>
-          <input class="placa" data-dia="${d}" placeholder="PLACA 1">
-          <div class="msg" id="msg1-${d}"></div>
+    daysContainer.innerHTML = `
+        <div class="header-row">
+            <div>FECHA</div>
+            <div>PLACA R1</div>
+            <div>PLACA R2</div>
+            <div>OCUP. 0 R1</div>
+            <div>OCUP. 0 R2</div>
+            <div>OBSERVACIÓN</div>
         </div>
-
-        <div>
-          <input class="placa" data-dia2="${d}" placeholder="PLACA 2">
-          <div class="msg" id="msg2-${d}"></div>
-        </div>
-
-        <div style="display:flex; justify-content:center;">
-          <input class="ocx ocup" data-oc1="${d}" maxlength="1" placeholder="">
-        </div>
-
-        <div style="display:flex; justify-content:center;">
-          <input class="ocx ocup" data-oc2="${d}" maxlength="1" placeholder="">
-        </div>
-
-        <div>
-          <input class="obs" data-obs="${d}" placeholder="OBSERVACIÓN">
-        </div>
-      </div>
     `;
-  }
 
-  activarValidaciones();
-  activarValidacionOcupacionX();
+    for (let d = 1; d <= dias; d++) {
+
+        let fecha = `${d}/${nMes}/${y}`;
+
+        daysContainer.innerHTML += `
+            <div class="row">
+                <div><b>${fecha}</b></div>
+
+                <div>
+                    <input class="placa" data-dia="${d}" placeholder="PLACA 1">
+                    <div class="msg" id="msg1-${d}"></div>
+                </div>
+
+                <div>
+                    <input class="placa" data-dia2="${d}" placeholder="PLACA 2">
+                    <div class="msg" id="msg2-${d}"></div>
+                </div>
+
+                <div style="display:flex; justify-content:center;">
+                    <input class="ocx ocup" data-oc1="${d}" maxlength="1" placeholder="">
+                </div>
+
+                <div style="display:flex; justify-content:center;">
+                    <input class="ocx ocup" data-oc2="${d}" maxlength="1" placeholder="">
+                </div>
+
+                <div>
+                    <input class="obs" data-obs="${d}" placeholder="OBSERVACIÓN">
+                </div>
+            </div>
+        `;
+    }
+
+    activarValidaciones();
+    activarValidacionOcupacionX();
 }
 
 function activarValidaciones() {
-  document.querySelectorAll(".placa").forEach(inp => {
-    inp.addEventListener("input", function() {
-      let val = this.value.toUpperCase().replace(/[^A-Z0-9]/g, "");
-      this.value = val;
+    document.querySelectorAll(".placa").forEach(inp => {
+        inp.addEventListener("input", function() {
+            let val = this.value.toUpperCase().replace(/[^A-Z0-9]/g, "");
+            this.value = val;
 
-      let id = this.dataset.dia ? `msg1-${this.dataset.dia}` : `msg2-${this.dataset.dia2}`;
-      let msgBox = document.getElementById(id);
-
-      if (val.length === 0) msgBox.textContent = "";
-      else if (!formatoPlacaRegExp.test(val)) msgBox.textContent = "FORMATO: XXX999";
-      else if (!placasValidas.includes(val)) msgBox.textContent = "PLACA NO AUTORIZADA";
-      else msgBox.textContent = "";
+            let id = this.dataset.dia ? `msg1-${this.dataset.dia}` : `msg2-${this.dataset.dia2}`;
+            let msgBox = document.getElementById(id);
+            
+            if (val.length === 0) msgBox.textContent = "";
+            else if (!formatoPlacaRegExp.test(val)) msgBox.textContent = "FORMATO: XXX999";
+            else if (!placasValidas.includes(val)) msgBox.textContent = "PLACA NO AUTORIZADA";
+            else msgBox.textContent = "";
+        });
     });
-  });
 }
 
 function activarValidacionOcupacionX() {
-  document.querySelectorAll(".ocup").forEach(inp => {
-    inp.addEventListener("input", function () {
-      let v = (this.value || "").toUpperCase().replace(/[^X]/g, "");
-      this.value = v.slice(0, 1);
+    document.querySelectorAll(".ocup").forEach(inp => {
+        inp.addEventListener("input", function () {
+            let v = (this.value || "").toUpperCase().replace(/[^X]/g, "");
+            this.value = v.slice(0, 1);
+        });
     });
-  });
 }
 
 async function guardarDatos() {
-  if (!estadoSeleccionado) {
-    errorEstado.textContent = "Debe seleccionar APROBADO o RECHAZADO.";
-    alert("❌ ERROR: Debe seleccionar APROBADO o RECHAZADO.");
-    return;
-  }
 
-  const responsableV = responsable.value.toUpperCase();
-  const yearV = year.value;
-  const monthV = month.value.toUpperCase();
-  const contratoV = contrato.value.toUpperCase();
-  const rutaV = ruta.value.toUpperCase();
-  let obsGeneralV = obsGeneral.value.toUpperCase();
-
-  const maximoTransportadoRaw = maximoTransportado.value;
-  let maximoTransportadoV = (maximoTransportadoRaw === "" ? null : Number(maximoTransportadoRaw));
-
-  if (!responsableV || !yearV || !monthV || !contratoV || !rutaV) {
-    alert("TODOS LOS CAMPOS PRINCIPALES SON OBLIGATORIOS (incluyendo Responsable).");
-    return;
-  }
-
-  // Validación placas
-  let errorPlacaEncontrado = false;
-  document.querySelectorAll(".placa").forEach(inp => {
-    let placa = inp.value.toUpperCase().trim();
-    if (placa.length > 0 && !formatoPlacaRegExp.test(placa)) {
-      errorPlacaEncontrado = true;
-      inp.style.border = '2px solid red';
-    } else {
-      inp.style.border = '1px solid #ccc';
+    if (!estadoSeleccionado) {
+        document.getElementById("errorEstado").textContent = "Debe seleccionar APROBADO o RECHAZADO.";
+        alert("❌ ERROR: Debe seleccionar APROBADO o RECHAZADO.");
+        return;
     }
-  });
 
-  if (errorPlacaEncontrado) {
-    alert("❌ ERROR: Una o más placas tienen el formato incorrecto. Deben ser 3 letras y 3 números (Ej: XXX999).");
-    return;
-  }
+    const responsableV = responsable.value.toUpperCase();
+    const yearV = year.value;
+    const monthV = month.value.toUpperCase();
+    const contratoV = contrato.value.toUpperCase();
+    const rutaV = ruta.value.toUpperCase();
+    let obsGeneralV = obsGeneral.value.toUpperCase();
 
-  if (obsGeneralV === "") obsGeneralV = null;
+    const maximoTransportadoRaw = document.getElementById("maximoTransportado").value;
+    let maximoTransportadoV = (maximoTransportadoRaw === "" ? null : Number(maximoTransportadoRaw));
 
-  // 1) Intentar obtener id_grupo por RPC
-  let idGrupoV = null;
-  const { data: idGrupoData, error: idGrupoError } = await client.rpc("get_next_id_grupo", {});
-  if (idGrupoError) {
-    console.error("❌ ERROR RPC get_next_id_grupo:", idGrupoError);
+    if (!responsableV || !yearV || !monthV || !contratoV || !rutaV) {
+        alert("TODOS LOS CAMPOS PRINCIPALES SON OBLIGATORIOS (incluyendo Responsable).");
+        return;
+    }
 
-    // ✅ Fallback: genera un bigint válido (milisegundos actuales)
-    // Esto evita bloquear el guardado mientras arreglas permisos en Supabase
-    idGrupoV = Date.now();
-    console.warn("⚠ Usando fallback id_grupo =", idGrupoV);
-  } else {
-    idGrupoV = idGrupoData;
-  }
-
-  let registros = [];
-
-  document.querySelectorAll(".row").forEach(row => {
-    let fechaTexto = row.querySelector("b")?.innerText;
-    if (!fechaTexto) return;
-
-    let [dia, mes, anio] = fechaTexto.split("/");
-    let fechaISO = `${anio}-${String(mes).padStart(2,'0')}-${String(dia).padStart(2,'0')}`;
-
-    let placa1 = row.querySelector("input[data-dia]")?.value.toUpperCase() || null;
-    let placa2 = row.querySelector("input[data-dia2]")?.value.toUpperCase() || null;
-    let obs = row.querySelector("input[data-obs]")?.value.toUpperCase() || null;
-
-    const oc1Raw = (row.querySelector("input[data-oc1]")?.value || "").toUpperCase().trim();
-    const oc2Raw = (row.querySelector("input[data-oc2]")?.value || "").toUpperCase().trim();
-
-    let ocupacion0R1 = (oc1Raw === "X") ? "X" : null;
-    let ocupacion0R2 = (oc2Raw === "X") ? "X" : null;
-
-    if (placa1 === "") placa1 = null;
-    if (placa2 === "") placa2 = null;
-    if (obs === "") obs = null;
-
-    registros.push({
-      id_grupo: idGrupoV,
-      año: parseInt(yearV),
-      mes: monthV,
-      numero_ruta: rutaV,
-      numero_de_contrato_oc: contratoV,
-      fecha_servicio: fechaISO,
-      placa_recorrido_1: placa1,
-      placa_recorrido_2: placa2,
-      ocupacion_0_r1: ocupacion0R1,
-      ocupacion_0_r2: ocupacion0R2,
-      observacion: obs,
-      observacion_general: obsGeneralV,
-      maximo_transportado: maximoTransportadoV,
-      responsable: responsableV,
-      estado: estadoSeleccionado
+    let errorPlacaEncontrado = false;
+    document.querySelectorAll(".placa").forEach(inp => {
+        let placa = inp.value.toUpperCase().trim();
+        if (placa.length > 0 && !formatoPlacaRegExp.test(placa)) {
+            errorPlacaEncontrado = true;
+            inp.style.border = '2px solid red'; 
+        } else {
+            inp.style.border = '1px solid #ccc';
+        }
     });
-  });
 
-  console.log(`📤 Insertando (id_grupo=${idGrupoV}):`, registros);
+    if (errorPlacaEncontrado) {
+        alert("❌ ERROR: Una o más placas tienen el formato incorrecto. Deben ser 3 letras y 3 números (Ej: XXX999).");
+        return; 
+    }
 
-  const { data, error } = await client.from("recepcion_certificados").insert(registros);
+    if (obsGeneralV === "") obsGeneralV = null;
 
-  if (error) {
-    console.error("❌ ERROR EN SUPABASE INSERT:", error);
-    alert("❌ Error al guardar. Revisa la consola.");
-    return;
-  }
+    // ✅ id_grupo: intenta RPC, si falla usa fallback
+    let idGrupoV = null;
+    const { data: idGrupoData, error: idGrupoError } = await client.rpc("get_next_id_grupo", {});
+    if (idGrupoError) {
+        console.error("❌ ERROR RPC get_next_id_grupo:", idGrupoError);
+        idGrupoV = Date.now();
+        console.warn("⚠ Usando fallback id_grupo =", idGrupoV);
+    } else {
+        idGrupoV = idGrupoData;
+    }
 
-  alert(`✅ Guardado exitoso. ID_GRUPO: ${idGrupoV}`);
-  window.location.reload();
+    let registros = [];
+
+    document.querySelectorAll(".row").forEach(row => {
+
+        let fechaTexto = row.querySelector("b")?.innerText;
+        if (!fechaTexto) return;
+
+        let [dia, mes, anio] = fechaTexto.split("/");
+        let fechaISO = `${anio}-${String(mes).padStart(2,'0')}-${String(dia).padStart(2,'0')}`;
+
+        let placa1 = row.querySelector("input[data-dia]")?.value.toUpperCase() || null;
+        let placa2 = row.querySelector("input[data-dia2]")?.value.toUpperCase() || null;
+        let obs = row.querySelector("input[data-obs]")?.value.toUpperCase() || null;
+
+        const oc1Raw = (row.querySelector("input[data-oc1]")?.value || "").toUpperCase().trim();
+        const oc2Raw = (row.querySelector("input[data-oc2]")?.value || "").toUpperCase().trim();
+
+        let ocupacion0R1 = (oc1Raw === "X") ? "X" : null;
+        let ocupacion0R2 = (oc2Raw === "X") ? "X" : null;
+
+        if (placa1 === "") placa1 = null;
+        if (placa2 === "") placa2 = null;
+        if (obs === "") obs = null;
+
+        registros.push({
+            id_grupo: idGrupoV,
+            año: parseInt(yearV),
+            mes: monthV,
+            numero_ruta: rutaV,
+            numero_de_contrato_oc: contratoV,
+            fecha_servicio: fechaISO,
+            placa_recorrido_1: placa1,
+            placa_recorrido_2: placa2,
+            ocupacion_0_r1: ocupacion0R1,
+            ocupacion_0_r2: ocupacion0R2,
+            observacion: obs,
+            observacion_general: obsGeneralV,
+            maximo_transportado: maximoTransportadoV,
+            responsable: responsableV,
+            estado: estadoSeleccionado
+        });
+
+    });
+
+    console.log(`📤 Insertando (id_grupo=${idGrupoV}):`, registros);
+
+    const { data, error } = await client
+        .from("recepcion_certificados")
+        .insert(registros);
+
+    if (error) {
+        console.error("❌ ERROR EN SUPABASE:", error);
+        alert("❌ Error al guardar. Revisa la consola.");
+        return;
+    }
+
+    alert(`✅ Guardado exitoso. ID_GRUPO: ${idGrupoV}`);
+    window.location.reload(); 
 }
 </script>
 
