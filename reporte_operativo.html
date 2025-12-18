@@ -71,7 +71,6 @@
 
   .hidden{display:none;}
 
-  /* Estilos del formulario del operativo (bonito y ordenado) */
   h2{
     margin:10px 0 15px 0;
   }
@@ -136,7 +135,9 @@
   <!-- ✅ MENÚ (SOLO ESTO SE VE AL INICIO) -->
   <div id="menuPrincipal" class="menu">
     <button class="btn-operativo" onclick="abrirVista('operativo')">📊 REPORTE OPERATIVO</button>
-    <button class="btn-sabana" onclick="abrirVista('sabana')">📑 SÁBANA VS CERTIFICADOS</button>
+
+    <!-- ✅ AJUSTE: AHORA REDIRIGE A sabana_rutas.html -->
+    <button class="btn-sabana" onclick="location.href='sabana_rutas.html'">📑 SÁBANA VS CERTIFICADOS</button>
   </div>
 
   <!-- ✅ TODO ARRANCA OCULTO -->
@@ -181,47 +182,26 @@
     <button class="btn-back" onclick="volverMenu()">⬅ Volver a Reportes</button>
   </div>
 
-  <div id="vistaSabana" class="hidden">
-    <h2>📑 Sábana vs Certificados Recibidos</h2>
-    <div class="note">
-      Esta vista queda lista para construir el nuevo reporte.
-    </div>
-
-    <button class="btn" onclick="alert('Pendiente: lógica del reporte SÁBANA VS CERTIFICADOS')">
-      GENERAR SÁBANA VS CERTIFICADOS (EXCEL)
-    </button>
-
-    <button class="btn-back" onclick="volverMenu()">⬅ Volver a Reportes</button>
-  </div>
-
 </div>
 
 <script>
-  // ✅ Supabase (igual a lo tuyo)
   const SUPABASE_URL = "https://vdsqkhajbfevpgeuvfbd.supabase.co";
   const SUPABASE_ANON_KEY =
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmZldnBnZXV2ZmJkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM2MDg3MTIsImV4cCI6MjA3OTE4NDcxMn0.OexzIcRC_F7pnFijSQGZVpXN1xdsDw8zuGR1gFHTyuI";
   const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-  // ✅ Navegación (menu -> vista)
   function abrirVista(tipo){
     document.getElementById("menuPrincipal").classList.add("hidden");
     document.getElementById("vistaOperativo").classList.add("hidden");
-    document.getElementById("vistaSabana").classList.add("hidden");
 
     if(tipo === "operativo") document.getElementById("vistaOperativo").classList.remove("hidden");
-    if(tipo === "sabana") document.getElementById("vistaSabana").classList.remove("hidden");
   }
 
   function volverMenu(){
     document.getElementById("vistaOperativo").classList.add("hidden");
-    document.getElementById("vistaSabana").classList.add("hidden");
     document.getElementById("menuPrincipal").classList.remove("hidden");
   }
 
-  // ============================================
-  // 🔥 PAGINACIÓN ILIMITADA
-  // ============================================
   async function fetchAllRows() {
     let page = 0;
     let rows = [];
@@ -245,10 +225,6 @@
     return rows;
   }
 
-  // ========================================================
-  // 💜 REPORTE OPERATIVO — 1 FILA POR:
-  // fecha_creacion + año + mes + numero_ruta + responsable
-  // ========================================================
   async function generarReporteOperativo() {
     const allData = await fetchAllRows();
 
