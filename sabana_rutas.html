@@ -10,21 +10,30 @@
 
 <style>
   body{ font-family: Arial, sans-serif; background:#eef1f7; margin:0; padding:0; }
-  .container{ width:95%; max-width:900px; background:#fff; margin:20px auto; padding:25px; border-radius:12px; box-shadow:0 4px 10px rgba(0,0,0,0.1); }
+  .container{ width:95%; max-width:980px; background:#fff; margin:20px auto; padding:25px; border-radius:12px; box-shadow:0 4px 10px rgba(0,0,0,0.1); }
   .header{ background:#ff9800; color:#111; text-align:center; padding:18px; border-radius:10px; font-size:24px; font-weight:bold; }
 
   label{ font-weight:bold; margin-top:12px; display:block; }
-  select, input{ width:100%; padding:10px; border-radius:8px; border:1px solid #ccc; margin-top:6px; box-sizing:border-box; text-transform:uppercase; background:#fff; }
+  select, input{
+    width:100%;
+    padding:10px;
+    border-radius:8px;
+    border:1px solid #ccc;
+    margin-top:6px;
+    box-sizing:border-box;
+    text-transform:uppercase;
+    background:#fff;
+  }
 
   .row{ display:flex; gap:12px; flex-wrap:wrap; }
   .col{ flex:1; min-width:240px; }
 
-  .btn{ width:100%; padding:14px; border:none; border-radius:10px; font-size:16px; font-weight:bold; cursor:pointer; margin-top:12px; }
+  .btn{ width:100%; padding:14px; border:none; border-radius:10px; font-size:15px; font-weight:bold; cursor:pointer; margin-top:12px; }
   .btn-primary{ background:#8a2be2; color:#fff; }
   .btn-primary:hover{ background:#6a1ba0; }
 
-  .btn-test{ background:#2b6cb0; color:#fff; }
-  .btn-test:hover{ background:#1f4f84; }
+  .btn-report{ background:#2b6cb0; color:#fff; }
+  .btn-report:hover{ background:#1f4f84; }
 
   .btn-back{ background:#333; color:#fff; margin-top:16px; }
   .btn-back:hover{ background:#111; }
@@ -38,6 +47,9 @@
 
   .progress{ margin-top:10px; height:10px; background:#e9e9e9; border-radius:999px; overflow:hidden; display:none; }
   .bar{ height:10px; width:0%; background:#8a2be2; transition: width .2s ease; }
+
+  ul{ margin:10px 0 0 18px; padding:0; }
+  li{ margin:6px 0; }
 </style>
 </head>
 
@@ -45,6 +57,14 @@
   <div class="container">
     <div class="header">📑 SÁBANA VS CERTIFICADOS</div>
 
+    <!-- ✅ LISTADO DE SABANAS CARGADAS -->
+    <div class="card">
+      <div style="font-weight:bold;">📌 Sábanas cargadas</div>
+      <div class="small">Ejemplo: <b>DICIEMBRE-2025</b>. Si cargas el mismo mes/año, se reemplaza.</div>
+      <div id="listaSabanas" class="small"><span class="warn">Cargando listado...</span></div>
+    </div>
+
+    <!-- ✅ FORM + BOTONES -->
     <div class="card">
       <div class="row">
         <div class="col">
@@ -72,17 +92,16 @@
       <label for="fileExcel">Archivo Excel (Sábana de Rutas):</label>
       <input id="fileExcel" type="file" accept=".xlsx,.xls" />
 
-      <!-- ✅ NUEVO: Probar conexión -->
-      <button class="btn btn-test" onclick="probarConexion()">
-        🔌 PROBAR CONEXIÓN SUPABASE
+      <button class="btn btn-primary" onclick="cargarSabanaRutas()">
+        ⬆️ CARGAR SÁBANA DE RUTAS (REEMPLAZA SI EXISTE MES/AÑO)
       </button>
 
-      <button class="btn btn-primary" onclick="cargarSabanaRutas()">
-        ⬆️ CARGAR SÁBANA DE RUTAS
+      <button class="btn btn-report" onclick="generarReporteCruce()">
+        📊 REPORTE CERTIFICADOS RECIBIDOS VS SÁBANA DE RUTAS (EXCEL)
       </button>
 
       <div class="small">
-        El Excel debe tener estas columnas (tal cual o muy parecido):<br>
+        El Excel de sábana debe tener estas columnas (tal cual o muy parecido):<br>
         <b>Año</b>, <b>Mes</b>, <b>Segmento Operación</b>, <b>Proveedor</b>, <b>Código Ruta</b>, <b>Estado</b>.
         <br><br>
         *Se guardará el Año/Mes que selecciones arriba para todas las filas.*
@@ -95,17 +114,16 @@
       <div id="status" class="small"></div>
     </div>
 
-    <button class="btn btn-back" onclick="location.href='reportes.html'">⬅ Volver a Reportes</button>
+    <button class="btn btn-back" onclick="location.href='./reportes.html'">⬅ Volver a Reportes</button>
   </div>
 
 <script>
   // ==========================
-  // ✅ SUPABASE CONFIG (TU INFO)
+  // ✅ SUPABASE CONFIG
   // ==========================
   const SUPABASE_URL = "https://vdsqkhajbfevpgeuvfbd.supabase.co";
   const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZkc3FraGFqYmZldnBnZXV2ZmJkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM2MDg3MTIsImV4cCI6MjA3OTE4NDcxMn0.OexzIcRC_F7pnFijSQGZVpXN1xdsDw8zuGR1gFHTyuI";
 
-  // ✅ AJUSTE CLAVE: forzar headers apikey + Authorization
   const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     headers: {
       apikey: SUPABASE_ANON_KEY,
@@ -147,33 +165,87 @@
     return out;
   }
 
-  // ==========================
-  // ✅ PROBAR CONEXIÓN
-  // ==========================
-  async function probarConexion(){
-    try{
-      setStatus(`<span class="warn">Probando conexión...</span>`);
-      // una consulta simple
-      const { data, error } = await client.from("sabana_rutas").select("*").limit(1);
+  function norm(v){
+    return (v ?? "").toString().trim().toUpperCase();
+  }
 
-      if(error){
-        console.error(error);
-        setStatus(`<span class="err">❌ Error de conexión:</span> ${error.message}`);
-        alert("Conexión fallida. Revisa el error en pantalla/console.");
+  function titleCaseMes(mesUpper){
+    const m = (mesUpper || "").toString().trim().toLowerCase();
+    if(!m) return "";
+    return m.charAt(0).toUpperCase() + m.slice(1);
+  }
+
+  // ==========================
+  // FETCH ALL (paginación)
+  // ==========================
+  async function fetchAll(table, selectStr, filtersFn){
+    let page = 0;
+    let rows = [];
+    const limit = 1000;
+
+    while(true){
+      let q = client.from(table).select(selectStr).range(page*limit, page*limit + limit - 1);
+      if (filtersFn) q = filtersFn(q);
+
+      const { data, error } = await q;
+      if(error) throw error;
+
+      rows = rows.concat(data || []);
+      if(!data || data.length < limit) break;
+      page++;
+    }
+    return rows;
+  }
+
+  // ==========================
+  // LISTADO DE SABANAS CARGADAS
+  // ==========================
+  async function cargarListadoSabanas(){
+    const el = document.getElementById("listaSabanas");
+    el.innerHTML = `<span class="warn">Cargando listado...</span>`;
+
+    try{
+      const rows = await fetchAll(
+        "sabana_rutas",
+        "año, mes",
+        (q) => q
+      );
+
+      if(!rows || rows.length === 0){
+        el.innerHTML = `<span class="warn">Aún no hay sábanas cargadas.</span>`;
         return;
       }
 
-      setStatus(`<span class="ok">✅ Conexión OK.</span> Puedes cargar el Excel.`);
-      alert("✅ Conexión Supabase OK");
-    } catch(e){
+      const map = {};
+      rows.forEach(r => {
+        const a = norm(r.año);
+        const m = norm(r.mes);
+        if(!a || !m) return;
+        const key = `${a}|${m}`;
+        map[key] = (map[key] || 0) + 1;
+      });
+
+      const items = Object.keys(map).map(k => {
+        const [a,m] = k.split("|");
+        return { año:a, mes:m, count: map[k] };
+      });
+
+      items.sort((x,y)=>{
+        if(x.año !== y.año) return y.año.localeCompare(x.año);
+        return x.mes.localeCompare(y.mes);
+      });
+
+      el.innerHTML = `<ul>${items.map(it =>
+        `<li><b>${it.mes}-${it.año}</b> <span class="small">(registros: ${it.count})</span></li>`
+      ).join("")}</ul>`;
+    }catch(e){
       console.error(e);
-      setStatus(`<span class="err">❌ Error inesperado:</span> ${e.message || e}`);
-      alert("Error inesperado. Revisa consola.");
+      el.innerHTML = `<span class="err">Error cargando listado:</span> ${e.message || e}`;
     }
   }
 
   // ==========================
-  // MAIN: CARGAR SABANA
+  // CARGAR SABANA (REEMPLAZA MES/AÑO)
   // ==========================
   async function cargarSabanaRutas(){
     try{
@@ -193,15 +265,17 @@
         return;
       }
 
+      const mesLabel = `${mes}-${anio}`;
+      const ok = confirm(`Vas a cargar la sábana de ${mesLabel}.\n\nSi ya existe, se REEMPLAZA (borra y vuelve a cargar).\n\n¿Continuar?`);
+      if(!ok) return;
+
       setStatus(`<span class="warn">Leyendo Excel...</span>`);
       showProgress(5);
 
       const buffer = await file.arrayBuffer();
       const wb = XLSX.read(buffer, { type: "array" });
-
       const sheetName = wb.SheetNames[0];
       const ws = wb.Sheets[sheetName];
-
       const raw = XLSX.utils.sheet_to_json(ws, { defval: "" });
 
       if(!raw || raw.length === 0){
@@ -238,13 +312,11 @@
         return;
       }
 
-      // ⚠️ IMPORTANTE: aquí uso los nombres EXACTOS que dijiste:
-      // año, mes, Segmento Operación, Proveedor, Código Ruta, Estado
       const rowsToInsert = raw.map(r => {
-        const seg = (r[colSeg] ?? "").toString().trim().toUpperCase();
-        const prov = (r[colProv] ?? "").toString().trim().toUpperCase();
-        const ruta = (r[colRuta] ?? "").toString().trim().toUpperCase();
-        const est  = (r[colEstado] ?? "").toString().trim().toUpperCase();
+        const seg = norm(r[colSeg]);
+        const prov = norm(r[colProv]);
+        const ruta = norm(r[colRuta]);
+        const est  = norm(r[colEstado]);
 
         if(!seg && !prov && !ruta && !est) return null;
 
@@ -264,19 +336,39 @@
         return;
       }
 
-      setStatus(`
-        <span class="warn">Preparando carga...</span><br>
-        Filas del Excel: <b>${raw.length}</b><br>
-        Filas válidas a insertar: <b>${rowsToInsert.length}</b>
-      `);
+      // 1) DELETE existente para ese mes/año
+      setStatus(`<span class="warn">Reemplazando: eliminando datos anteriores de ${mesLabel}...</span>`);
+      showProgress(15);
+
+      const { error: delError } = await client
+        .from("sabana_rutas")
+        .delete()
+        .match({ año: anio, mes: mes });
+
+      if(delError){
+        hideProgress();
+        console.error(delError);
+        const msg = (delError.message || "").toLowerCase();
+        if(msg.includes("row-level security")){
+          setStatus(`<span class="err">❌ RLS bloqueó el DELETE.</span> Debes crear policy <b>DELETE</b> para sabana_rutas (role public).<br>${delError.message}`);
+          alert("No se pudo reemplazar: RLS bloqueó el DELETE.");
+        }else{
+          setStatus(`<span class="err">❌ Error eliminando:</span> ${delError.message}`);
+          alert("Error eliminando datos anteriores. Revisa consola.");
+        }
+        return;
+      }
+
+      // 2) INSERT en lotes
+      setStatus(`<span class="warn">Insertando nueva sábana (${rowsToInsert.length} filas)...</span>`);
+      showProgress(25);
 
       const BATCH = 500;
       const chunks = chunkArray(rowsToInsert, BATCH);
 
       let insertedTotal = 0;
-
       for(let i=0;i<chunks.length;i++){
-        const pct = Math.round(10 + ((i / chunks.length) * 85));
+        const pct = Math.round(25 + ((i / chunks.length) * 70));
         showProgress(pct);
 
         const { data, error } = await client
@@ -295,8 +387,11 @@
       }
 
       showProgress(100);
-      setStatus(`<span class="ok">✔ Carga completada.</span><br>Filas insertadas: <b>${insertedTotal}</b>`);
-      alert("✔ Sábana cargada correctamente en la tabla sabana_rutas");
+      setStatus(`<span class="ok">✔ Sábana ${mesLabel} cargada/reemplazada.</span><br>Filas insertadas: <b>${insertedTotal}</b>`);
+      alert(`✔ Sábana ${mesLabel} cargada/reemplazada correctamente`);
+
+      document.getElementById("fileExcel").value = "";
+      await cargarListadoSabanas();
 
     } catch (e){
       hideProgress();
@@ -305,6 +400,167 @@
       alert("Ocurrió un error inesperado. Revisa consola.");
     }
   }
+
+  // ==========================
+  // REPORTE: CERTIFICADOS VS SABANA
+  // ==========================
+  async function generarReporteCruce(){
+    try{
+      setStatus("");
+      hideProgress();
+
+      const anio = document.getElementById("anioServicio").value.trim();
+      const mes = document.getElementById("mesServicio").value.trim().toUpperCase();
+
+      if(!anio || !mes){
+        alert("Debes seleccionar AÑO y MES para generar el reporte.");
+        return;
+      }
+
+      const mesLabel = `${mes}-${anio}`;
+      setStatus(`<span class="warn">Generando reporte para ${mesLabel}...</span>`);
+      showProgress(10);
+
+      // 1) traer sabana del mes/año
+      const sabana = await fetchAll(
+        "sabana_rutas",
+        'año, mes, "Segmento Operación", "Proveedor", "Código Ruta", "Estado"',
+        (q) => q.eq("año", anio).eq("mes", mes)
+      );
+
+      if(!sabana || sabana.length === 0){
+        hideProgress();
+        setStatus(`<span class="err">No hay sábana cargada para ${mesLabel}.</span>`);
+        alert(`No hay sábana cargada para ${mesLabel}.`);
+        return;
+      }
+
+      showProgress(35);
+
+      // 2) traer certificados del mes/año (APROBADO) para cruce
+      const certificadosAprob = await fetchAll(
+        "recepcion_certificados",
+        "fecha_creacion, año, mes, numero_de_contrato_oc, numero_ruta, responsable, estado, observacion_general",
+        (q) => q.eq("año", anio).eq("mes", mes).eq("estado", "APROBADO")
+      );
+
+      showProgress(55);
+
+      // Map ruta -> info (usar fecha más antigua)
+      const mapRuta = {};
+      (certificadosAprob || []).forEach(r => {
+        const ruta = norm(r.numero_ruta);
+        if(!ruta) return;
+
+        const fecha = (r.fecha_creacion ?? "").toString().trim();
+        if(!mapRuta[ruta]){
+          mapRuta[ruta] = {
+            fecha_creacion: fecha,
+            numero_de_contrato_oc: r.numero_de_contrato_oc ?? "",
+            responsable: r.responsable ?? "",
+            estado: r.estado ?? "",
+            observacion_general: r.observacion_general ?? ""
+          };
+        } else {
+          // quedarnos con la fecha menor (más antigua)
+          const prev = (mapRuta[ruta].fecha_creacion || "");
+          if(prev && fecha && fecha < prev){
+            mapRuta[ruta].fecha_creacion = fecha;
+            mapRuta[ruta].numero_de_contrato_oc = r.numero_de_contrato_oc ?? "";
+            mapRuta[ruta].responsable = r.responsable ?? "";
+            mapRuta[ruta].estado = r.estado ?? "";
+            mapRuta[ruta].observacion_general = r.observacion_general ?? "";
+          }
+        }
+      });
+
+      // 3) hoja 1 cruce
+      const cruce = sabana.map(s => {
+        const ruta = norm(s["Código Ruta"]);
+        const info = mapRuta[ruta];
+
+        return {
+          año: s.año,
+          mes: s.mes,
+          "Segmento Operación": s["Segmento Operación"],
+          "Proveedor": s["Proveedor"],
+          "Código Ruta": s["Código Ruta"],
+          "Estado (Sábana)": s["Estado"],
+
+          CERTIFICADO_RECIBIDO: info ? "SI" : "NO",
+          FECHA_RECIBIDO: info ? (info.fecha_creacion || "") : "",
+          ESTADO_CERTIFICADO: info ? (info.estado || "APROBADO") : "",
+          CONTRATO_OC: info ? (info.numero_de_contrato_oc || "") : "",
+          RESPONSABLE: info ? (info.responsable || "") : "",
+          OBSERVACION_GENERAL: info ? (info.observacion_general || "") : ""
+        };
+      });
+
+      showProgress(75);
+
+      // 4) hoja 2 resumen por proveedor
+      const resumen = {};
+      cruce.forEach(r => {
+        const prov = (r["Proveedor"] ?? "").toString().trim().toUpperCase() || "SIN PROVEEDOR";
+        if(!resumen[prov]){
+          resumen[prov] = { PROVEEDOR: prov, TOTAL_RUTAS: 0, RECIBIDOS: 0, PENDIENTES: 0, _fechas: new Set() };
+        }
+        resumen[prov].TOTAL_RUTAS += 1;
+        if(r.CERTIFICADO_RECIBIDO === "SI"){
+          resumen[prov].RECIBIDOS += 1;
+          if(r.FECHA_RECIBIDO) resumen[prov]._fechas.add(r.FECHA_RECIBIDO);
+        }
+      });
+
+      const resumenArr = Object.values(resumen).map(x => {
+        x.PENDIENTES = x.TOTAL_RUTAS - x.RECIBIDOS;
+        const fechas = Array.from(x._fechas).sort();
+        delete x._fechas;
+        x.FECHAS_RECIBIDAS = fechas.join(", ");
+        return x;
+      }).sort((a,b)=> a.PROVEEDOR.localeCompare(b.PROVEEDOR));
+
+      // 5) export excel
+      const columnasCruce = [
+        "año","mes","Segmento Operación","Proveedor","Código Ruta","Estado (Sábana)",
+        "CERTIFICADO_RECIBIDO","FECHA_RECIBIDO","ESTADO_CERTIFICADO","CONTRATO_OC","RESPONSABLE","OBSERVACION_GENERAL"
+      ];
+
+      const columnasResumen = [
+        "PROVEEDOR","TOTAL_RUTAS","RECIBIDOS","PENDIENTES","FECHAS_RECIBIDAS"
+      ];
+
+      const ws1 = XLSX.utils.json_to_sheet(cruce, { header: columnasCruce });
+      const ws2 = XLSX.utils.json_to_sheet(resumenArr, { header: columnasResumen });
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws1, "CRUCE");
+      XLSX.utils.book_append_sheet(wb, ws2, "RESUMEN_PROVEEDOR");
+
+      const filename = `reporte_certificados_vs_sabana_${mesLabel}.xlsx`;
+      XLSX.writeFile(wb, filename);
+
+      showProgress(100);
+      setStatus(`<span class="ok">✔ Reporte generado:</span> ${filename}<br>Filas sábana: <b>${sabana.length}</b> | Certificados APROBADO: <b>${(certificadosAprob||[]).length}</b>`);
+      alert("✔ Reporte generado correctamente");
+
+    }catch(e){
+      hideProgress();
+      console.error(e);
+      const msg = e?.message || e;
+      if((msg+"").toLowerCase().includes("row-level security")){
+        setStatus(`<span class="err">❌ RLS bloqueó el SELECT.</span> Debes permitir SELECT en recepcion_certificados y sabana_rutas (role public).<br>${msg}`);
+      }else{
+        setStatus(`<span class="err">❌ Error:</span> ${msg}`);
+      }
+      alert("Error generando reporte. Revisa consola.");
+    }
+  }
+
+  // init
+  (async ()=>{
+    await cargarListadoSabanas();
+  })();
 </script>
 
 </body>
