@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Reportes</title>
+
+  <style>
+    body{
+      font-family: Arial, sans-serif;
+      background:#eef1f7;
+      margin:0;
+      padding:0;
+    }
+    .container{
+      width:95%;
+      max-width:900px;
+      background:#fff;
+      margin:20px auto;
+      padding:25px;
+      border-radius:12px;
+      box-shadow:0 4px 10px rgba(0,0,0,0.1);
+    }
+    .header{
+      background:#8a2be2;
+      color:#fff;
+      text-align:center;
+      padding:18px;
+      border-radius:10px;
+      font-size:28px;
+      font-weight:bold;
+      display:flex;
+      justify-content:center;
+      gap:10px;
+    }
+    .menu{
+      display:flex;
+      gap:15px;
+      margin-top:18px;
+      flex-wrap:wrap;
+    }
+    .menu button{
+      flex:1;
+      min-width:260px;
+      padding:16px;
+      border:none;
+      border-radius:10px;
+      font-size:16px;
+      font-weight:bold;
+      cursor:pointer;
+    }
+    .btn-operativo{
+      background:#8a2be2;
+      color:#fff;
+    }
+    .btn-operativo:hover{background:#6a1ba0;}
+
+    .btn-sabana{
+      background:#ff9800;
+      color:#111;
+    }
+    .btn-sabana:hover{background:#e68900;}
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="header">📋 Reportes</div>
+
+    <div class="menu">
+      <button class="btn-operativo" onclick="window.location.href='./reporte_operativo.html'">
+        📊 REPORTE OPERATIVO
+      </button>
+
+      <button class="btn-sabana" onclick="window.location.href='./sabana_rutas.html'">
+        📑 SÁBANA VS CERTIFICADOS
+      </button>
+    </div>
+  </div>
+</body>
+</html>
