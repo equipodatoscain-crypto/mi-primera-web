@@ -9,121 +9,23 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
 <style>
-  body{
-    font-family: Arial, sans-serif;
-    background:#eef1f7;
-    margin:0;
-    padding:0;
-  }
-
-  .container{
-    width:95%;
-    max-width:900px;
-    background:#fff;
-    margin:20px auto;
-    padding:25px;
-    border-radius:12px;
-    box-shadow:0 4px 10px rgba(0,0,0,0.1);
-  }
-
-  .header{
-    background:#8a2be2;
-    color:#fff;
-    text-align:center;
-    padding:18px;
-    border-radius:10px;
-    font-size:28px;
-    font-weight:bold;
-    display:flex;
-    justify-content:center;
-    gap:10px;
-  }
-
-  .menu{
-    display:flex;
-    gap:15px;
-    margin-top:18px;
-    flex-wrap:wrap;
-  }
-
-  .menu button{
-    flex:1;
-    min-width:260px;
-    padding:16px;
-    border:none;
-    border-radius:10px;
-    font-size:16px;
-    font-weight:bold;
-    cursor:pointer;
-  }
-
-  .btn-operativo{
-    background:#8a2be2;
-    color:#fff;
-  }
+  body{font-family: Arial, sans-serif;background:#eef1f7;margin:0;padding:0;}
+  .container{width:95%;max-width:900px;background:#fff;margin:20px auto;padding:25px;border-radius:12px;box-shadow:0 4px 10px rgba(0,0,0,0.1);}
+  .header{background:#8a2be2;color:#fff;text-align:center;padding:18px;border-radius:10px;font-size:28px;font-weight:bold;display:flex;justify-content:center;gap:10px;}
+  .menu{display:flex;gap:15px;margin-top:18px;flex-wrap:wrap;}
+  .menu button{flex:1;min-width:260px;padding:16px;border:none;border-radius:10px;font-size:16px;font-weight:bold;cursor:pointer;}
+  .btn-operativo{background:#8a2be2;color:#fff;}
   .btn-operativo:hover{background:#6a1ba0;}
-
-  .btn-sabana{
-    background:#ff9800;
-    color:#111;
-  }
+  .btn-sabana{background:#ff9800;color:#111;}
   .btn-sabana:hover{background:#e68900;}
-
   .hidden{display:none;}
-
-  h2{
-    margin:10px 0 15px 0;
-  }
-
-  label{
-    font-weight:bold;
-    margin-top:10px;
-    display:block;
-  }
-
-  select, input{
-    width:100%;
-    padding:10px;
-    border-radius:6px;
-    border:1px solid #ccc;
-    margin-top:5px;
-    text-transform:uppercase;
-    box-sizing:border-box;
-  }
-
-  .btn{
-    width:100%;
-    padding:12px;
-    background:#8a2be2;
-    color:#fff;
-    border:none;
-    border-radius:8px;
-    font-size:18px;
-    margin-top:18px;
-    cursor:pointer;
-  }
+  h2{margin:10px 0 15px 0;}
+  label{font-weight:bold;margin-top:10px;display:block;}
+  select,input{width:100%;padding:10px;border-radius:6px;border:1px solid #ccc;margin-top:5px;text-transform:uppercase;box-sizing:border-box;}
+  .btn{width:100%;padding:12px;background:#8a2be2;color:#fff;border:none;border-radius:8px;font-size:18px;margin-top:18px;cursor:pointer;}
   .btn:hover{background:#6a1ba0;}
-
-  .btn-back{
-    width:100%;
-    padding:12px;
-    background:#333;
-    color:#fff;
-    border:none;
-    border-radius:8px;
-    font-size:16px;
-    margin-top:14px;
-    cursor:pointer;
-  }
+  .btn-back{width:100%;padding:12px;background:#333;color:#fff;border:none;border-radius:8px;font-size:16px;margin-top:14px;cursor:pointer;}
   .btn-back:hover{background:#111;}
-
-  .note{
-    background:#fff3cd;
-    border:1px solid #ffeeba;
-    padding:12px;
-    border-radius:10px;
-    color:#856404;
-  }
 </style>
 </head>
 
@@ -132,17 +34,12 @@
 
   <div class="header">📋 Reportes</div>
 
-  <!-- ✅ MENÚ (SOLO ESTO SE VE AL INICIO) -->
   <div id="menuPrincipal" class="menu">
     <button class="btn-operativo" onclick="abrirVista('operativo')">📊 REPORTE OPERATIVO</button>
-
-    <!-- ✅ AJUSTE: AHORA REDIRIGE A sabana_rutas.html -->
     <button class="btn-sabana" onclick="location.href='sabana_rutas.html'">📑 SÁBANA VS CERTIFICADOS</button>
   </div>
 
-  <!-- ✅ TODO ARRANCA OCULTO -->
   <div id="vistaOperativo" class="hidden">
-
     <h2>📊 Reporte Operativo</h2>
 
     <label>Año:</label>
@@ -188,18 +85,32 @@
   const SUPABASE_URL = "https://vdsqkhajbfevpgeuvfbd.supabase.co";
   const SUPABASE_ANON_KEY =
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmZldnBnZXV2ZmJkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM2MDg3MTIsImV4cCI6MjA3OTE4NDcxMn0.OexzIcRC_F7pnFijSQGZVpXN1xdsDw8zuGR1gFHTyuI";
-  const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  // (Opcional pero ayuda): forzar headers como en sabana_rutas
+  const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    headers: {
+      apikey: SUPABASE_ANON_KEY,
+      Authorization: "Bearer " + SUPABASE_ANON_KEY
+    }
+  });
 
   function abrirVista(tipo){
     document.getElementById("menuPrincipal").classList.add("hidden");
     document.getElementById("vistaOperativo").classList.add("hidden");
-
     if(tipo === "operativo") document.getElementById("vistaOperativo").classList.remove("hidden");
   }
 
   function volverMenu(){
     document.getElementById("vistaOperativo").classList.add("hidden");
     document.getElementById("menuPrincipal").classList.remove("hidden");
+  }
+
+  // Normalizador robusto
+  function norm(v){
+    return (v ?? "")
+      .toString()
+      .trim()
+      .toUpperCase();
   }
 
   async function fetchAllRows() {
@@ -214,86 +125,107 @@
         .range(page * limit, page * limit + limit - 1);
 
       if (error) {
-        console.error(error);
-        break;
+        // ✅ Aquí estaba el problema: antes solo lo imprimía y seguía.
+        console.error("ERROR SELECT recepcion_certificados:", error);
+        throw new Error(error.message || "Error consultando recepcion_certificados");
       }
 
-      rows = rows.concat(data);
-      if (data.length < limit) break;
+      rows = rows.concat(data || []);
+      if (!data || data.length < limit) break;
       page++;
     }
     return rows;
   }
 
   async function generarReporteOperativo() {
-    const allData = await fetchAllRows();
+    try{
+      const allData = await fetchAllRows();
 
-    const yearV = year.value.trim();
-    const monthV = month.value.trim().toUpperCase();
-    const contratoV = contrato.value.trim().toUpperCase();
-    const rutaV = ruta.value.trim().toUpperCase();
-    const responsableV = responsable.value.trim().toUpperCase();
-    const estadoV = estado.value.trim().toUpperCase();
+      // Si Supabase devuelve 0 filas, lo avisamos claro
+      if(!allData || allData.length === 0){
+        alert("Supabase devolvió 0 registros. Revisa RLS/Policies de SELECT en recepcionpcion_certificados.");
+        return;
+      }
 
-    let filtrados = allData.filter(row => {
-      if (yearV && row.año != yearV) return false;
-      if (monthV && row.mes != monthV) return false;
-      if (contratoV && row.numero_de_contrato_oc != contratoV) return false;
-      if (rutaV && row.numero_ruta != rutaV) return false;
-      if (responsableV && row.responsable != responsableV) return false;
-      if (estadoV && row.estado != estadoV) return false;
-      return true;
-    });
+      const yearV = norm(year.value);
+      const monthV = norm(month.value);         // ENERO, FEBRERO...
+      const contratoV = norm(contrato.value);
+      const rutaV = norm(ruta.value);
+      const responsableV = norm(responsable.value);
+      const estadoV = norm(estado.value);
 
-    if (filtrados.length === 0) {
-      alert("No hay datos para estos filtros.");
-      return;
+      // ✅ Comparación normalizada (quita espacios/casos raros)
+      const filtrados = allData.filter(row => {
+        const rowYear = norm(row.año);
+        const rowMes = norm(row.mes);
+        const rowContrato = norm(row.numero_de_contrato_oc);
+        const rowRuta = norm(row.numero_ruta);
+        const rowResp = norm(row.responsable);
+        const rowEstado = norm(row.estado);
+
+        if (yearV && rowYear !== yearV) return false;
+        if (monthV && rowMes !== monthV) return false;
+        if (contratoV && rowContrato !== contratoV) return false;
+        if (rutaV && rowRuta !== rutaV) return false;
+        if (responsableV && rowResp !== responsableV) return false;
+        if (estadoV && rowEstado !== estadoV) return false;
+
+        return true;
+      });
+
+      if (filtrados.length === 0) {
+        alert(
+          "No hay datos para estos filtros.\n\n" +
+          "TIP: si antes había datos, revisa en Supabase si activaste RLS en recepcion_certificados sin Policy SELECT."
+        );
+        return;
+      }
+
+      // Agrupación
+      const resumen = {};
+      filtrados.forEach(row => {
+        const key = [
+          norm(row.fecha_creacion),
+          norm(row.año),
+          norm(row.mes),
+          norm(row.numero_ruta),
+          norm(row.responsable)
+        ].join("|");
+        if (!resumen[key]) resumen[key] = row;
+      });
+
+      const salida = Object.values(resumen);
+
+      // Orden por ruta
+      salida.sort((a, b) => norm(a.numero_ruta).localeCompare(norm(b.numero_ruta)));
+
+      const columnas = [
+        "fecha_creacion",
+        "año",
+        "mes",
+        "numero_de_contrato_oc",
+        "numero_ruta",
+        "responsable",
+        "estado",
+        "observacion_general"
+      ];
+
+      const salidaOrdenada = salida.map(row => {
+        const nuevo = {};
+        columnas.forEach(col => nuevo[col] = row[col]);
+        return nuevo;
+      });
+
+      const hoja = XLSX.utils.json_to_sheet(salidaOrdenada, { header: columnas });
+      const libro = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(libro, hoja, "Operativo");
+      XLSX.writeFile(libro, "reporte_operativo_certificados.xlsx");
+
+      alert("✔ Reporte Operativo generado correctamente");
+    }catch(e){
+      console.error(e);
+      alert("ERROR real: " + (e.message || e));
     }
-
-    const resumen = {};
-    filtrados.forEach(row => {
-      const key = [
-        row.fecha_creacion,
-        row.año,
-        row.mes,
-        row.numero_ruta,
-        row.responsable
-      ].join("|");
-
-      if (!resumen[key]) resumen[key] = row;
-    });
-
-    const salida = Object.values(resumen);
-
-    salida.sort((a, b) => {
-      if (a.numero_ruta < b.numero_ruta) return -1;
-      if (a.numero_ruta > b.numero_ruta) return 1;
-      return 0;
-    });
-
-    const columnas = [
-      "fecha_creacion",
-      "año",
-      "mes",
-      "numero_de_contrato_oc",
-      "numero_ruta",
-      "responsable",
-      "estado",
-      "observacion_general"
-    ];
-
-    const salidaOrdenada = salida.map(row => {
-      const nuevo = {};
-      columnas.forEach(col => nuevo[col] = row[col]);
-      return nuevo;
-    });
-
-    const hoja = XLSX.utils.json_to_sheet(salidaOrdenada, { header: columnas });
-    const libro = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(libro, hoja, "Operativo");
-    XLSX.writeFile(libro, "reporte_operativo_certificados.xlsx");
-
-    alert("✔ Reporte Operativo generado correctamente");
   }
 </script>
 </body>
