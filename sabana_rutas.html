@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Sábana vs Certificados</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@1.35.7"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<style>
+  body{
+    font-family: Arial, sans-serif;
+    background:#eef1f7;
+    margin:0;
+    padding:0;
+  }
+  .container{
+    width:95%;
+    max-width:900px;
+    background:#fff;
+    margin:20px auto;
+    padding:25px;
+    border-radius:12px;
+    box-shadow:0 4px 10px rgba(0,0,0,0.1);
+  }
+  .header{
+    background:#ff9800;
+    color:#111;
+    text-align:center;
+    padding:18px;
+    border-radius:10px;
+    font-size:24px;
+    font-weight:bold;
+  }
+  label{
+    font-weight:bold;
+    margin-top:12px;
+    display:block;
+  }
+  select, input{
+    width:100%;
+    padding:10px;
+    border-radius:8px;
+    border:1px solid #ccc;
+    margin-top:6px;
+    box-sizing:border-box;
+    text-transform:uppercase;
+    background:#fff;
+  }
+  .row{
+    display:flex;
+    gap:12px;
+    flex-wrap:wrap;
+  }
+  .col{
+    flex:1;
+    min-width:240px;
+  }
+  .btn{
+    width:100%;
+    padding:14px;
+    border:none;
+    border-radius:10px;
+    font-size:16px;
+    font-weight:bold;
+    cursor:pointer;
+    margin-top:16px;
+  }
+  .btn-primary{
+    background:#8a2be2;
+    color:#fff;
+  }
+  .btn-primary:hover{ background:#6a1ba0; }
+
+  .btn-back{
+    background:#333;
+    color:#fff;
+  }
+  .btn-back:hover{ background:#111; }
+
+  .card{
+    margin-top:16px;
+    padding:14px;
+    border-radius:10px;
+    border:1px solid #e6e6e6;
+    background:#fafafa;
+  }
+  .ok{ color:#1b5e20; font-weight:bold; }
+  .warn{ color:#8a6d3b; font-weight:bold; }
+  .err{ color:#b71c1c; font-weight:bold; }
+
+  .small{
+    font-size:13px;
+    color:#555;
+    margin-top:6px;
+    line-height:1.35;
+  }
+
+  .progress{
+    margin-top:10px;
+    height:10px;
+    background:#e9e9e9;
+    border-radius:999px;
+    overflow:hidden;
+  }
+  .bar{
+    height:10px;
+    width:0%;
+    background:#8a2be2;
+    transition: width .2s ease;
+  }
+</style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="header">📑 SÁBANA VS CERTIFICADOS</div>
+
+    <div class="card">
+      <div class="row">
+        <div class="col">
+          <label for="anioServicio">Año de servicio:</label>
+          <select id="anioServicio">
+            <option value="">(Seleccione)</option>
+            <option>2025</option>
+            <option>2026</option>
+            <option>2027</option>
+          </select>
+        </div>
+
+        <div class="col">
+          <label for="mesServicio">Mes de servicio:</label>
+          <select id="mesServicio">
+            <option value="">(Seleccione)</option>
+            <option>Enero</option>
+            <option>Febrero</option>
+            <option>Marzo</option>
+            <option>Abril</option>
+            <option>Mayo</option>
+            <option>Junio</option>
+            <option>Julio</option>
+            <option>Agosto</option>
+            <option>Septiembre</option>
+            <option>Octubre</option>
+            <option>Noviembre</option>
+            <option>Diciembre</option>
+          </select>
+        </div>
+      </div>
+
+      <label for="fileExcel">Archivo Excel (Sábana de Rutas):</label>
+      <input id="fileExcel" type="file" accept=".xlsx,.xls" />
+
+      <button class="btn btn-primary" onclick="cargarSabanaRutas()">
+        ⬆️ CARGAR SÁBANA DE RUTAS
+      </button>
+
+      <div class="small">
+        El Excel debe tener estas columnas (tal cual o muy parecido):<br>
+        <b>Año</b>, <b>Mes</b>, <b>Segmento Operación</b>, <b>Proveedor</b>, <b>Código Ruta</b>, <b>Estado</b>.
+        <br><br>
+        *Año/Mes del Excel se validan, pero el sistema guardará el Año/Mes que selecciones arriba para todas las filas.*
+      </div>
+
+      <div class="progress" style="display:none" id="progressWrap">
+        <div class="bar" id="progressBar"></div>
+      </div>
+
+      <div id="status" class="small" style="margin-top:10px;"></div>
+    </div>
+
+    <button class="btn btn-back" onclick="history.back()">⬅ Volver</button>
+  </div>
+
+<script>
+  // ==========================
+  // SUPABASE CONFIG
+  // ==========================
+  const SUPABASE_URL = "https://vdsqkhajbfevpgeuvfbd.supabase.co";
+  const SUPABASE_ANON_KEY =
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmZldnBnZXV2ZmJkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM2MDg3MTIsImV4cCI6MjA3OTE4NDcxMn0.OexzIcRC_F7pnFijSQGZVpXN1xdsDw8zuGR1gFHTyuI";
+  const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  // ==========================
+  // HELPERS
+  // ==========================
+  function setStatus(html) {
+    document.getElementById("status").innerHTML = html;
+  }
+
+  function normalizeHeader(s){
+    // minusculas + sin tildes + sin espacios extras
+    return (s ?? "")
+      .toString()
+      .trim()
+      .toLowerCase()
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // quita tildes
+      .replace(/\s+/g, " ");
+  }
+
+  function showProgress(pct){
+    const wrap = document.getElementById("progressWrap");
+    const bar = document.getElementById("progressBar");
+    wrap.style.display = "block";
+    bar.style.width = Math.max(0, Math.min(100, pct)) + "%";
+  }
+
+  function hideProgress(){
+    document.getElementById("progressWrap").style.display = "none";
+    document.getElementById("progressBar").style.width = "0%";
+  }
+
+  function chunkArray(arr, size){
+    const out = [];
+    for(let i=0;i<arr.length;i+=size) out.push(arr.slice(i,i+size));
+    return out;
+  }
+
+  // ==========================
+  // MAIN: CARGAR SABANA
+  // ==========================
+  async function cargarSabanaRutas(){
+    try{
+      setStatus("");
+      hideProgress();
+
+      const anio = document.getElementById("anioServicio").value.trim();
+      const mes = document.getElementById("mesServicio").value.trim().toUpperCase();
+      const file = document.getElementById("fileExcel").files[0];
+
+      if(!anio || !mes){
+        alert("Debes seleccionar AÑO y MES de servicio antes de cargar la sábana.");
+        return;
+      }
+      if(!file){
+        alert("Selecciona un archivo Excel.");
+        return;
+      }
+
+      setStatus(`<span class="warn">Leyendo Excel...</span>`);
+      showProgress(5);
+
+      // Leer archivo
+      const buffer = await file.arrayBuffer();
+      const wb = XLSX.read(buffer, { type: "array" });
+
+      // Toma la primera hoja
+      const sheetName = wb.SheetNames[0];
+      const ws = wb.Sheets[sheetName];
+
+      // Convertir a JSON usando headers del Excel
+      const raw = XLSX.utils.sheet_to_json(ws, { defval: "" });
+
+      if(!raw || raw.length === 0){
+        alert("El Excel no tiene filas para cargar.");
+        hideProgress();
+        return;
+      }
+
+      // Mapeo flexible de columnas del Excel
+      // Esperadas (normalizadas):
+      // "año" / "ano", "mes", "segmento operacion", "proveedor", "codigo ruta", "estado"
+      const sampleRow = raw[0];
+      const excelHeaders = Object.keys(sampleRow);
+      const headerMap = {}; // normalizado -> real
+
+      excelHeaders.forEach(h => { headerMap[normalizeHeader(h)] = h; });
+
+      const pick = (normKeyList) => {
+        for(const k of normKeyList){
+          if(headerMap[k]) return headerMap[k];
+        }
+        return null;
+      };
+
+      const colAno = pick(["año","ano"]);
+      const colMes = pick(["mes"]);
+      const colSeg = pick(["segmento operacion","segmento operación","segmento"]);
+      const colProv = pick(["proveedor"]);
+      const colRuta = pick(["codigo ruta","código ruta","codigo de ruta","ruta","codigo_ruta"]);
+      const colEstado = pick(["estado"]);
+
+      const faltantes = [];
+      if(!colSeg) faltantes.push("Segmento Operación");
+      if(!colProv) faltantes.push("Proveedor");
+      if(!colRuta) faltantes.push("Código Ruta");
+      if(!colEstado) faltantes.push("Estado");
+
+      if(faltantes.length){
+        hideProgress();
+        alert("Faltan columnas en el Excel: " + faltantes.join(", "));
+        return;
+      }
+
+      // Preparar filas para insertar (NO reemplaza: solo insert)
+      // Guardamos SIEMPRE año/mes seleccionados
+      const rowsToInsert = raw
+        .map((r) => {
+          const seg = (r[colSeg] ?? "").toString().trim().toUpperCase();
+          const prov = (r[colProv] ?? "").toString().trim().toUpperCase();
+          const ruta = (r[colRuta] ?? "").toString().trim().toUpperCase();
+          const est = (r[colEstado] ?? "").toString().trim().toUpperCase();
+
+          // saltar filas vacías (sin ruta y sin proveedor y sin segmento)
+          if(!seg && !prov && !ruta && !est) return null;
+
+          return {
+            año: anio,                 // en tabla: año
+            mes: mes,                  // en tabla: mes
+            "Segmento Operación": seg, // en tabla: Segmento Operación (si tu columna es distinta, dime y lo ajusto)
+            "Proveedor": prov,
+            "Código Ruta": ruta,
+            "Estado": est
+          };
+        })
+        .filter(Boolean);
+
+      if(rowsToInsert.length === 0){
+        hideProgress();
+        alert("No se encontraron filas válidas en el Excel.");
+        return;
+      }
+
+      // Validación suave: si el Excel trae año/mes, avisar si difiere
+      let difAnoMes = 0;
+      if(colAno || colMes){
+        raw.forEach(r=>{
+          const a = (colAno ? (r[colAno] ?? "").toString().trim() : "");
+          const m = (colMes ? (r[colMes] ?? "").toString().trim().toUpperCase() : "");
+          if((a && a !== anio) || (m && m !== mes)) difAnoMes++;
+        });
+      }
+
+      setStatus(`
+        <span class="warn">Preparando carga...</span><br>
+        Filas del Excel: <b>${raw.length}</b><br>
+        Filas válidas a insertar: <b>${rowsToInsert.length}</b><br>
+        ${difAnoMes ? `<span class="warn">Aviso:</span> Hay <b>${difAnoMes}</b> filas donde Año/Mes del Excel no coinciden; se guardará el Año/Mes seleccionado.` : ""}
+      `);
+
+      // Insert en lotes
+      const BATCH = 500; // seguro para evitar límites
+      const chunks = chunkArray(rowsToInsert, BATCH);
+
+      let insertedTotal = 0;
+
+      for(let i=0;i<chunks.length;i++){
+        const pct = Math.round(10 + ((i / chunks.length) * 85));
+        showProgress(pct);
+
+        const { data, error } = await client
+          .from("sabana_rutas")
+          .insert(chunks[i]);
+
+        if(error){
+          hideProgress();
+          console.error(error);
+          setStatus(`<span class="err">Error insertando lote ${i+1}/${chunks.length}:</span> ${error.message}`);
+          alert("Error cargando la sábana. Revisa consola.");
+          return;
+        }
+
+        insertedTotal += (data ? data.length : chunks[i].length);
+      }
+
+      showProgress(100);
+      setStatus(`<span class="ok">✔ Carga completada.</span><br>Filas insertadas: <b>${insertedTotal}</b>`);
+      alert("✔ Sábana cargada correctamente en la tabla sabana_rutas");
+
+    } catch (e){
+      hideProgress();
+      console.error(e);
+      setStatus(`<span class="err">Error inesperado:</span> ${e.message || e}`);
+      alert("Ocurrió un error inesperado. Revisa consola.");
+    }
+  }
+</script>
+
+</body>
+</html>
