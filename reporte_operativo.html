@@ -2,14 +2,14 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Reporte Operativo</title>
+<title>Reporte Operativo de Certificados</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@1.35.7"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
 <style>
-  body{font-family: Arial, sans-serif;background:#eef1f7;margin:0;padding:0;}
+  body{font-family:Arial;background:#eef1f7;margin:0;padding:0;}
   .container{width:95%;max-width:900px;background:#fff;margin:20px auto;padding:25px;border-radius:12px;box-shadow:0 4px 10px rgba(0,0,0,0.1);}
   .header{background:#8a2be2;color:#fff;text-align:center;padding:18px;border-radius:10px;font-size:28px;font-weight:bold;display:flex;justify-content:center;gap:10px;}
   h2{margin:15px 0 10px 0;}
@@ -72,12 +72,11 @@
 </div>
 
 <script>
-  // ✅ TU INFO (la misma que ya funcionó)
   const SUPABASE_URL = "https://vdsqkhajbfevpgeuvfbd.supabase.co";
   const SUPABASE_ANON_KEY =
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmZldnBnZXV2ZmJkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM2MDg3MTIsImV4cCI6MjA3OTE4NDcxMn0.OexzIcRC_F7pnFijSQGZVpXN1xdsDw8zuGR1gFHTyuI";
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZkc3FraGFqYmZldnBnZXV2ZmJkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM2MDg3MTIsImV4cCI6MjA3OTE4NDcxMn0.OexzIcRC_F7pnFijSQGZVpXN1xdsDw8zuGR1gFHTyuI";
 
-  // ✅ ARREGLO: forzar headers apikey + Authorization (como sabana_rutas)
+  // ✅ MISMO ARREGLO QUE EN sabana_rutas.html (evita Invalid API key por headers)
   const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     headers: {
       apikey: SUPABASE_ANON_KEY,
@@ -86,11 +85,9 @@
   });
 
   function setStatus(html){ document.getElementById("status").innerHTML = html; }
+  function norm(v){ return (v ?? "").toString().trim().toUpperCase(); }
 
-  function norm(v){
-    return (v ?? "").toString().trim().toUpperCase();
-  }
-
+  // ✅ PAGINACIÓN ILIMITADA
   async function fetchAllRows() {
     let page = 0;
     let rows = [];
@@ -102,28 +99,25 @@
         .select("*")
         .range(page * limit, page * limit + limit - 1);
 
-      if (error) {
-        // ✅ aquí mostramos el error real (incluye Invalid API key, RLS, etc.)
-        throw error;
-      }
+      if (error) throw error;
 
       rows = rows.concat(data || []);
       if (!data || data.length < limit) break;
       page++;
     }
-
     return rows;
   }
 
+  // ✅ REPORTE OPERATIVO (1 fila por fecha_creacion+año+mes+ruta+responsable)
   async function generarReporteOperativo() {
     try{
-      setStatus(`<span class="warn">Consultando datos...</span>`);
+      setStatus(`<span class="warn">Consultando Supabase...</span>`);
 
       const allData = await fetchAllRows();
 
       if(!allData || allData.length === 0){
         setStatus(`<span class="err">Supabase devolvió 0 filas.</span> Si antes había datos, revisa RLS/Policy SELECT en <b>recepcion_certificados</b>.`);
-        alert("No hay datos (Supabase devolvió 0 filas).");
+        alert("Supabase devolvió 0 filas.");
         return;
       }
 
@@ -148,16 +142,16 @@
         if (rutaV && rowRuta !== rutaV) return false;
         if (responsableV && rowResp !== responsableV) return false;
         if (estadoV && rowEstado !== estadoV) return false;
+
         return true;
       });
 
       if (filtrados.length === 0) {
-        setStatus(`<span class="warn">No hay datos para estos filtros.</span> (Ojo: si el mes en BD trae espacios o diferente formato, ahora ya lo normalizamos.)`);
+        setStatus(`<span class="warn">No hay datos para esos filtros.</span> (Pero Supabase sí respondió: ${allData.length} filas leídas)`);
         alert("No hay datos para estos filtros.");
         return;
       }
 
-      // Agrupar (1 fila por fecha_creacion+año+mes+ruta+responsable)
       const resumen = {};
       filtrados.forEach(row => {
         const key = [
@@ -167,6 +161,7 @@
           norm(row.numero_ruta),
           norm(row.responsable)
         ].join("|");
+
         if (!resumen[key]) resumen[key] = row;
       });
 
@@ -197,14 +192,15 @@
 
       setStatus(`<span class="ok">✔ Reporte generado.</span> Filas: <b>${salidaOrdenada.length}</b>`);
       alert("✔ Reporte Operativo generado correctamente");
-    } catch(err){
+    }catch(err){
       console.error(err);
+      const msg = (err?.message || JSON.stringify(err));
 
-      const msg = (err?.message || err?.error_description || JSON.stringify(err)) + "";
-      if (msg.toLowerCase().includes("invalid api key")) {
-        setStatus(`<span class="err">❌ Invalid API key</span>. Esto suele ser cache o que este archivo quedó con otra key. Haz <b>Ctrl+F5</b> y verifica que este HTML tenga la misma key que sabana_rutas.`);
-      } else if (msg.toLowerCase().includes("row-level security")) {
-        setStatus(`<span class="err">❌ RLS bloqueó el SELECT</span> en <b>recepcion_certificados</b>. Crea policy <b>SELECT</b> para role <b>public</b>.`);
+      // ✅ mensajes claros
+      if ((msg+"").toLowerCase().includes("invalid api key")){
+        setStatus(`<span class="err">❌ Invalid API key.</span> Haz <b>Ctrl+F5</b> (caché) y confirma que este archivo es el que estás abriendo.`);
+      } else if ((msg+"").toLowerCase().includes("row-level security")){
+        setStatus(`<span class="err">❌ RLS bloqueó el SELECT</span> en <b>recepcion_certificados</b>. Debes crear policy SELECT para public.`);
       } else {
         setStatus(`<span class="err">❌ Error:</span> ${msg}`);
       }
