@@ -5,15 +5,6 @@
 <title>Recepción de Certificados</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@1.35.7"></script>
-
-<script>
-  const SUPABASE_URL = "https://vdsqkhajbfevpgeuvfbd.supabase.co";
-  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZkc3FraGFqYmZldnBnZXV2ZmJkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM2MDg3MTIsImV4cCI6MjA3OTE4NDcxMn0.OexzIcRC_F7pnFijSQGZVpXN1xdsDw8zuGR1gFHTyuI";
-  const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  console.log("🔵 Conectado correctamente a Supabase");
-</script>
-
 <style>
   body { font-family: Arial; background: #eef1f7; margin: 0; padding: 0; }
 
@@ -61,6 +52,11 @@
     cursor: pointer;
     margin-top: 15px;
     transition: background 0.3s;
+  }
+
+  .btn:disabled{
+    opacity: .7;
+    cursor: not-allowed;
   }
 
   .btn-estado {
@@ -179,6 +175,17 @@
 
   .btn-operativo { background:#8a2be2; }
   .btn-financiero { background:#28a745; }
+
+  /* mini estado */
+  .mini {
+    margin-top: 10px;
+    font-size: 13px;
+    color: #111827;
+    background: #f3f4f6;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+  }
 </style>
 
 </head>
@@ -207,6 +214,8 @@
 <h1>Recepción de Certificados</h1>
 
 <div class="container">
+
+  <div class="mini" id="miniEstado">🔌 Backend: verificando...</div>
 
   <label>Responsable:</label>
   <input id="responsable" placeholder="Nombre de quien registra">
@@ -255,11 +264,18 @@
     <button id="btnRechazado" class="btn-estado btn-rechazado" onclick="seleccionarEstado('RECHAZADO')">⚠ RECHAZADO</button>
   </div>
 
-  <button class="btn" onclick="guardarDatos()">GUARDAR DATOS</button>
+  <button id="btnGuardar" class="btn" onclick="guardarDatos()">GUARDAR DATOS</button>
 
 </div>
 
 <script>
+/* =====================================================
+   ✅ CONFIG BACKEND (SQL SERVER vía Render)
+   - Si tu backend está en Render, deja esta URL así.
+   - Si prefieres mismo dominio (proxy), puedes poner: ""
+===================================================== */
+const API_BASE = "https://backend-recepcion-certificados.onrender.com";
+
 /* =====================================================
    🔒 CLAVE SOLO PARA AREA OPERATIVA
 ===================================================== */
@@ -268,7 +284,6 @@ function irAreaOperativaConClave() {
   if (clave === "Rutas***#*") {
     window.location.href = "area_operativa.html";
   } else if (clave === null) {
-    // canceló
     return;
   } else {
     alert("❌ Contraseña incorrecta.");
@@ -412,6 +427,69 @@ function activarValidacionOcupacionX() {
   });
 }
 
+/* =====================================================
+   ✅ BACKEND HELPERS
+   - /health ya lo tienes (según tu captura)
+   - /next-id-grupo y /recepcion-certificados:
+     si no existen aún, el HTML hace fallback para id_grupo
+===================================================== */
+async function pingBackend() {
+  const el = document.getElementById("miniEstado");
+  try {
+    const r = await fetch(`${API_BASE}/health`, { method: "GET" });
+    if (!r.ok) throw new Error("Health no OK");
+    const j = await r.json().catch(() => ({}));
+    if (j && j.ok === true) el.textContent = "🟢 Backend: OK";
+    else el.textContent = "🟡 Backend responde, pero sin {ok:true}";
+  } catch (e) {
+    el.textContent = "🔴 Backend: NO responde (revisa Render / CORS / URL)";
+    console.error(e);
+  }
+}
+
+async function getNextIdGrupo() {
+  // Intenta pedir al backend un consecutivo
+  try {
+    const r = await fetch(`${API_BASE}/next-id-grupo`, { method: "GET" });
+    if (!r.ok) throw new Error("next-id-grupo no OK");
+    const j = await r.json();
+    // acepta {id_grupo: 123} o {next:123} o {value:123}
+    const v = j?.id_grupo ?? j?.next ?? j?.value;
+    if (typeof v === "number" && Number.isFinite(v)) return v;
+    if (typeof v === "string" && v.trim() !== "" && !isNaN(Number(v))) return Number(v);
+    throw new Error("Respuesta next-id-grupo inválida");
+  } catch (e) {
+    // Fallback seguro
+    const fallback = Date.now();
+    console.warn("⚠ No existe /next-id-grupo o falló. Usando fallback id_grupo =", fallback);
+    return fallback;
+  }
+}
+
+async function postRegistros(payload) {
+  // Envía al backend para que inserte en SQL Server
+  // Endpoint sugerido: POST /recepcion-certificados
+  // Body: { id_grupo, registros: [...] }
+  const r = await fetch(`${API_BASE}/recepcion-certificados`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  // Intentar leer JSON para mensaje de error/ok
+  let j = null;
+  try { j = await r.json(); } catch (_) {}
+
+  if (!r.ok) {
+    const msg = j?.error || j?.message || `HTTP ${r.status}`;
+    throw new Error(msg);
+  }
+  return j;
+}
+
+/* =====================================================
+   ✅ GUARDAR (ahora a SQL Server vía backend)
+===================================================== */
 async function guardarDatos() {
   if (!estadoSeleccionado) {
     document.getElementById("errorEstado").textContent = "Debe seleccionar APROBADO o RECHAZADO.";
@@ -419,12 +497,12 @@ async function guardarDatos() {
     return;
   }
 
-  const responsableV = responsable.value.toUpperCase();
+  const responsableV = responsable.value.toUpperCase().trim();
   const yearV = year.value;
-  const monthV = month.value.toUpperCase();
-  const contratoV = contrato.value.toUpperCase();
-  const rutaV = ruta.value.toUpperCase();
-  let obsGeneralV = obsGeneral.value.toUpperCase();
+  const monthV = month.value.toUpperCase().trim();
+  const contratoV = contrato.value.toUpperCase().trim();
+  const rutaV = ruta.value.toUpperCase().trim();
+  let obsGeneralV = (obsGeneral.value || "").toUpperCase().trim();
 
   const maximoTransportadoRaw = document.getElementById("maximoTransportado").value;
   let maximoTransportadoV = (maximoTransportadoRaw === "" ? null : Number(maximoTransportadoRaw));
@@ -452,72 +530,83 @@ async function guardarDatos() {
 
   if (obsGeneralV === "") obsGeneralV = null;
 
-  // id_grupo: intenta RPC, si falla usa fallback
-  let idGrupoV = null;
-  const { data: idGrupoData, error: idGrupoError } = await client.rpc("get_next_id_grupo", {});
-  if (idGrupoError) {
-    console.error("❌ ERROR RPC get_next_id_grupo:", idGrupoError);
-    idGrupoV = Date.now();
-    console.warn("⚠ Usando fallback id_grupo =", idGrupoV);
-  } else {
-    idGrupoV = idGrupoData;
-  }
+  // deshabilitar botón mientras guarda
+  const btn = document.getElementById("btnGuardar");
+  btn.disabled = true;
+  btn.textContent = "GUARDANDO...";
 
-  let registros = [];
+  try {
+    // ✅ id_grupo
+    const idGrupoV = await getNextIdGrupo();
 
-  document.querySelectorAll(".row").forEach(row => {
-    let fechaTexto = row.querySelector("b")?.innerText;
-    if (!fechaTexto) return;
+    let registros = [];
 
-    let [dia, mes, anio] = fechaTexto.split("/");
-    let fechaISO = `${anio}-${String(mes).padStart(2,'0')}-${String(dia).padStart(2,'0')}`;
+    document.querySelectorAll(".row").forEach(row => {
+      let fechaTexto = row.querySelector("b")?.innerText;
+      if (!fechaTexto) return;
 
-    let placa1 = row.querySelector("input[data-dia]")?.value.toUpperCase() || null;
-    let placa2 = row.querySelector("input[data-dia2]")?.value.toUpperCase() || null;
-    let obs = row.querySelector("input[data-obs]")?.value.toUpperCase() || null;
+      let [dia, mes, anio] = fechaTexto.split("/");
+      let fechaISO = `${anio}-${String(mes).padStart(2,'0')}-${String(dia).padStart(2,'0')}`;
 
-    const oc1Raw = (row.querySelector("input[data-oc1]")?.value || "").toUpperCase().trim();
-    const oc2Raw = (row.querySelector("input[data-oc2]")?.value || "").toUpperCase().trim();
+      let placa1 = row.querySelector("input[data-dia]")?.value.toUpperCase().trim() || null;
+      let placa2 = row.querySelector("input[data-dia2]")?.value.toUpperCase().trim() || null;
+      let obs = row.querySelector("input[data-obs]")?.value.toUpperCase().trim() || null;
 
-    let ocupacion0R1 = (oc1Raw === "X") ? "X" : null;
-    let ocupacion0R2 = (oc2Raw === "X") ? "X" : null;
+      const oc1Raw = (row.querySelector("input[data-oc1]")?.value || "").toUpperCase().trim();
+      const oc2Raw = (row.querySelector("input[data-oc2]")?.value || "").toUpperCase().trim();
 
-    if (placa1 === "") placa1 = null;
-    if (placa2 === "") placa2 = null;
-    if (obs === "") obs = null;
+      let ocupacion0R1 = (oc1Raw === "X") ? "X" : null;
+      let ocupacion0R2 = (oc2Raw === "X") ? "X" : null;
 
-    registros.push({
-      id_grupo: idGrupoV,
-      año: parseInt(yearV),
-      mes: monthV,
-      numero_ruta: rutaV,
-      numero_de_contrato_oc: contratoV,
-      fecha_servicio: fechaISO,
-      placa_recorrido_1: placa1,
-      placa_recorrido_2: placa2,
-      ocupacion_0_r1: ocupacion0R1,
-      ocupacion_0_r2: ocupacion0R2,
-      observacion: obs,
-      observacion_general: obsGeneralV,
-      maximo_transportado: maximoTransportadoV,
-      responsable: responsableV,
-      estado: estadoSeleccionado
+      if (placa1 === "") placa1 = null;
+      if (placa2 === "") placa2 = null;
+      if (obs === "") obs = null;
+
+      registros.push({
+        id_grupo: idGrupoV,
+        año: parseInt(yearV, 10),
+        mes: monthV,
+        numero_ruta: rutaV,
+        numero_de_contrato_oc: contratoV,
+        fecha_servicio: fechaISO,
+        placa_recorrido_1: placa1,
+        placa_recorrido_2: placa2,
+        ocupacion_0_r1: ocupacion0R1,
+        ocupacion_0_r2: ocupacion0R2,
+        observacion: obs,
+        observacion_general: obsGeneralV,
+        maximo_transportado: maximoTransportadoV,
+        responsable: responsableV,
+        estado: estadoSeleccionado
+      });
     });
-  });
 
-  console.log(`📤 Insertando (id_grupo=${idGrupoV}):`, registros);
+    if (registros.length === 0) {
+      alert("❌ No hay registros para guardar. Primero genera los días del mes.");
+      return;
+    }
 
-  const { error } = await client.from("recepcion_certificados").insert(registros);
+    console.log(`📤 Enviando al backend (id_grupo=${idGrupoV})`, registros);
 
-  if (error) {
-    console.error("❌ ERROR EN SUPABASE:", error);
-    alert("❌ Error al guardar. Revisa la consola.");
-    return;
+    // ✅ ENVÍO A SQL SERVER (backend)
+    const resp = await postRegistros({ id_grupo: idGrupoV, registros });
+
+    alert(`✅ Guardado exitoso. ID_GRUPO: ${idGrupoV}`);
+    console.log("✅ Respuesta backend:", resp);
+
+    window.location.reload();
+
+  } catch (e) {
+    console.error("❌ ERROR GUARDANDO:", e);
+    alert("❌ Error al guardar en el backend/SQL Server:\n" + (e?.message || e));
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "GUARDAR DATOS";
   }
-
-  alert(`✅ Guardado exitoso. ID_GRUPO: ${idGrupoV}`);
-  window.location.reload();
 }
+
+/* iniciar */
+pingBackend();
 </script>
 
 </body>
