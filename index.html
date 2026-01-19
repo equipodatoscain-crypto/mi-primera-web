@@ -187,21 +187,17 @@
     border: 1px solid #e5e7eb;
   }
 
-  /* =====================================================
-     ✅ NUEVO: QUITAR FLECHITAS (SPINNERS) EN CAMPOS NUMÉRICOS
-     Solo aplica a inputs con class="no-spin"
-  ====================================================== */
+  /* ✅ Quitar flechitas */
   input.no-spin::-webkit-outer-spin-button,
   input.no-spin::-webkit-inner-spin-button {
     -webkit-appearance: none;
     margin: 0;
   }
   input.no-spin {
-    -moz-appearance: textfield; /* Firefox */
+    -moz-appearance: textfield;
     appearance: textfield;
   }
 
-  /* Botón + para agregar filas */
   .btn-plus {
     width: 42px;
     height: 42px;
@@ -222,14 +218,12 @@
 <body>
 
 <div class="topbar">
-  <!-- ✅ IZQUIERDA: AREA OPERATIVA (con clave) -->
   <div class="topbar-left">
     <button class="btn-top btn-area" onclick="irAreaOperativaConClave()">
       🟡 AREA OPERATIVA
     </button>
   </div>
 
-  <!-- ✅ DERECHA: botones existentes -->
   <div class="topbar-right">
     <button class="btn-top btn-operativo" onclick="window.location.href='reportes.html'">
       📋 REPORTE OPERATIVO
@@ -280,16 +274,7 @@
 
   <div id="daysContainer"></div>
 
-  <!-- =====================================================
-       ✅ NUEVOS CAMPOS: CONDUCTORES y AAR (MÁXIMO 5 FILAS)
-       - Fila 1 -> conductor1 / aar1
-       - Fila 2 -> conductor2 / aar2
-       - ...
-       - Fila 5 -> conductor5 / aar5
-       - Botón + solo permite agregar hasta 5
-       - Inputs numéricos: INT (solo dígitos) sin flechitas
-       - NO interfiere con nada existente
-  ====================================================== -->
+  <!-- ✅ CONDUCTORES/AAR (MAX 5) -->
   <div style="margin-top:25px;">
     <div class="header-row" style="grid-template-columns:1fr 1fr 1fr 1fr;">
       <div>CONDUCTORES</div>
@@ -299,28 +284,25 @@
     </div>
 
     <div id="conductoresAarContainer">
-      <!-- FILA 1 -->
       <div class="row" style="grid-template-columns:1fr 1fr 1fr 1fr;">
         <input class="no-spin ca-int" inputmode="numeric" pattern="[0-9]*" type="text" id="conductor1" placeholder="">
-        <input type="text" id="estado_conductor1" placeholder="">
+        <input type="text" id="estado_conductor1" placeholder="" readonly>
         <input class="no-spin ca-int" inputmode="numeric" pattern="[0-9]*" type="text" id="aar1" placeholder="">
-        <input type="text" id="estado_aar1" placeholder="">
+        <input type="text" id="estado_aar1" placeholder="" readonly>
       </div>
 
-      <!-- FILA 2 -->
       <div class="row" style="grid-template-columns:1fr 1fr 1fr 1fr;">
         <input class="no-spin ca-int" inputmode="numeric" pattern="[0-9]*" type="text" id="conductor2" placeholder="">
-        <input type="text" id="estado_conductor2" placeholder="">
+        <input type="text" id="estado_conductor2" placeholder="" readonly>
         <input class="no-spin ca-int" inputmode="numeric" pattern="[0-9]*" type="text" id="aar2" placeholder="">
-        <input type="text" id="estado_aar2" placeholder="">
+        <input type="text" id="estado_aar2" placeholder="" readonly>
       </div>
 
-      <!-- FILA 3 -->
       <div class="row" style="grid-template-columns:1fr 1fr 1fr 1fr;">
         <input class="no-spin ca-int" inputmode="numeric" pattern="[0-9]*" type="text" id="conductor3" placeholder="">
-        <input type="text" id="estado_conductor3" placeholder="">
+        <input type="text" id="estado_conductor3" placeholder="" readonly>
         <input class="no-spin ca-int" inputmode="numeric" pattern="[0-9]*" type="text" id="aar3" placeholder="">
-        <input type="text" id="estado_aar3" placeholder="">
+        <input type="text" id="estado_aar3" placeholder="" readonly>
       </div>
     </div>
 
@@ -328,7 +310,6 @@
       <button id="btnAddCA" class="btn-plus" type="button" onclick="agregarFilaConductoresAar()" title="Agregar fila">+</button>
     </div>
   </div>
-  <!-- ===================================================== -->
 
   <label>Observación General:</label>
   <textarea class="generalBox" id="obsGeneral" rows="4" style="resize:none;"></textarea>
@@ -349,26 +330,15 @@
 </div>
 
 <script>
-/* =====================================================
-   ✅ CONFIG BACKEND (SQL SERVER vía Render)
-===================================================== */
 const API_BASE = "https://backend-recepcion-certificados.onrender.com";
 
-/* =====================================================
-   🔒 CLAVE SOLO PARA AREA OPERATIVA
-===================================================== */
 function irAreaOperativaConClave() {
   const clave = prompt("Digite su contraseña para ingresar al Área Operativa:");
-  if (clave === "Rutas***#*") {
-    window.location.href = "area_operativa.html";
-  } else if (clave === null) {
-    return;
-  } else {
-    alert("❌ Contraseña incorrecta.");
-  }
+  if (clave === "Rutas***#*") window.location.href = "area_operativa.html";
+  else if (clave === null) return;
+  else alert("❌ Contraseña incorrecta.");
 }
 
-// Estado seleccionado
 let estadoSeleccionado = null;
 
 const placasValidas = ["AAA111","WNX955"];
@@ -388,25 +358,18 @@ function seleccionarEstado(estado) {
   if (estado === 'RECHAZADO') btnRechazado.classList.add('selected');
 }
 
-/* =====================================================
-   ✅ NUEVO (SOLO UI): CONDUCTORES/AAR (MAX 5)
-   - Empieza con 3 filas como venías mostrando
-   - Botón + agrega fila 4 y 5
-   - Al llegar a 5, deshabilita el +
-   - IDs EXACTOS para tu BD: conductor1..5 y aar1..5
-===================================================== */
+/* =========================
+   CONDUCTORES/AAR (MAX 5)
+========================= */
 const CA_MAX_FILAS = 5;
-let caFilaCount = 3; // ya existen 3 filas en el HTML
+let caFilaCount = 3;
 
 function activarSoloEnterosEnInputsCA() {
   document.querySelectorAll(".ca-int").forEach(inp => {
-    if (inp.dataset.caBound === "1") return; // evita duplicar listeners
+    if (inp.dataset.caBound === "1") return;
     inp.dataset.caBound = "1";
-
     inp.addEventListener("input", function () {
-      let v = (this.value ?? "").toString();
-      v = v.replace(/[^\d]/g, ""); // solo dígitos => INT
-      this.value = v;
+      this.value = (this.value ?? "").toString().replace(/[^\d]/g, "");
     });
   });
 }
@@ -414,41 +377,110 @@ function activarSoloEnterosEnInputsCA() {
 function actualizarBotonAddCA() {
   const btn = document.getElementById("btnAddCA");
   if (!btn) return;
-
-  if (caFilaCount >= CA_MAX_FILAS) {
-    btn.disabled = true;
-    btn.style.opacity = "0.6";
-    btn.title = "Máximo 5 filas";
-  } else {
-    btn.disabled = false;
-    btn.style.opacity = "1";
-    btn.title = "Agregar fila";
-  }
+  btn.disabled = caFilaCount >= CA_MAX_FILAS;
+  btn.style.opacity = btn.disabled ? "0.6" : "1";
+  btn.title = btn.disabled ? "Máximo 5 filas" : "Agregar fila";
 }
 
 function agregarFilaConductoresAar() {
-  if (caFilaCount >= CA_MAX_FILAS) {
-    actualizarBotonAddCA();
-    return;
-  }
-
+  if (caFilaCount >= CA_MAX_FILAS) { actualizarBotonAddCA(); return; }
   caFilaCount += 1;
-  const cont = document.getElementById("conductoresAarContainer");
 
+  const cont = document.getElementById("conductoresAarContainer");
   const html = `
     <div class="row" style="grid-template-columns:1fr 1fr 1fr 1fr;">
       <input class="no-spin ca-int" inputmode="numeric" pattern="[0-9]*" type="text" id="conductor${caFilaCount}" placeholder="">
-      <input type="text" id="estado_conductor${caFilaCount}" placeholder="">
+      <input type="text" id="estado_conductor${caFilaCount}" placeholder="" readonly>
       <input class="no-spin ca-int" inputmode="numeric" pattern="[0-9]*" type="text" id="aar${caFilaCount}" placeholder="">
-      <input type="text" id="estado_aar${caFilaCount}" placeholder="">
+      <input type="text" id="estado_aar${caFilaCount}" placeholder="" readonly>
     </div>
   `;
   cont.insertAdjacentHTML("beforeend", html);
 
   activarSoloEnterosEnInputsCA();
   actualizarBotonAddCA();
+  activarConsultaEstadosCA(); // ✅ engancha consultas a los nuevos inputs
 }
 
+/* =========================
+   ✅ CONSULTA ESTADOS (BD)
+   - conductorX -> /estado-conductor/<cedula>
+   - aarX       -> /estado-aar/<cedula>
+   - Si estado = SIN DOCUMENTOS -> agrega a obsGeneral: "<cedula> SIN DOCUMENTOS"
+========================= */
+const sinDocsSet = new Set();
+
+function normalizarTexto(t) {
+  return (t ?? "").toString().trim().toUpperCase();
+}
+
+function agregarSinDocumentosAObs(cedula) {
+  const c = normalizarTexto(cedula);
+  if (!c) return;
+
+  const linea = `${c} SIN DOCUMENTOS`;
+  if (sinDocsSet.has(linea)) return;
+
+  sinDocsSet.add(linea);
+
+  const actual = (document.getElementById("obsGeneral").value || "").toString();
+  const existe = actual.toUpperCase().includes(linea);
+  if (!existe) {
+    const sep = actual.trim() === "" ? "" : "\n";
+    document.getElementById("obsGeneral").value = actual + sep + linea;
+  }
+}
+
+async function consultarEstado(tipo, cedula) {
+  const c = normalizarTexto(cedula);
+  if (!c) return null;
+
+  const url = tipo === "CONDUCTOR"
+    ? `${API_BASE}/estado-conductor/${encodeURIComponent(c)}`
+    : `${API_BASE}/estado-aar/${encodeURIComponent(c)}`;
+
+  try {
+    const r = await fetch(url, { method: "GET" });
+    if (!r.ok) return null;
+    const j = await r.json().catch(() => null);
+    const est = normalizarTexto(j?.estado);
+    return est || null;
+  } catch (e) {
+    console.error("Error consultando estado:", e);
+    return null;
+  }
+}
+
+function activarConsultaEstadosCA() {
+  for (let i = 1; i <= CA_MAX_FILAS; i++) {
+    const inpC = document.getElementById(`conductor${i}`);
+    const outC = document.getElementById(`estado_conductor${i}`);
+    const inpA = document.getElementById(`aar${i}`);
+    const outA = document.getElementById(`estado_aar${i}`);
+
+    if (inpC && !inpC.dataset.estadoBound) {
+      inpC.dataset.estadoBound = "1";
+      inpC.addEventListener("blur", async () => {
+        const est = await consultarEstado("CONDUCTOR", inpC.value);
+        if (outC) outC.value = est || "";
+        if (est === "SIN DOCUMENTOS") agregarSinDocumentosAObs(inpC.value);
+      });
+    }
+
+    if (inpA && !inpA.dataset.estadoBound) {
+      inpA.dataset.estadoBound = "1";
+      inpA.addEventListener("blur", async () => {
+        const est = await consultarEstado("AAR", inpA.value);
+        if (outA) outA.value = est || "";
+        if (est === "SIN DOCUMENTOS") agregarSinDocumentosAObs(inpA.value);
+      });
+    }
+  }
+}
+
+/* =========================
+   GENERAR DIAS (TU LOGICA)
+========================= */
 function generarDias() {
   let y = year.value;
   let m = month.value;
@@ -566,9 +598,9 @@ function activarValidacionOcupacionX() {
   });
 }
 
-/* =====================================================
-   ✅ BACKEND HELPERS
-===================================================== */
+/* =========================
+   BACKEND HELPERS (TU LOGICA)
+========================= */
 async function pingBackend() {
   const el = document.getElementById("miniEstado");
   try {
@@ -616,9 +648,21 @@ async function postRegistros(payload) {
   return j;
 }
 
-/* =====================================================
-   ✅ GUARDAR (NO se tocó tu lógica existente)
-===================================================== */
+/* =========================
+   ✅ NUEVO: leer enteros conductor/aar para guardar
+========================= */
+function getIntOrNull(id) {
+  const el = document.getElementById(id);
+  if (!el) return null;
+  const v = (el.value ?? "").toString().trim();
+  if (v === "") return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+}
+
+/* =========================
+   ✅ GUARDAR (AQUI SE AGREGAN conductor1..5 y aar1..5)
+========================= */
 async function guardarDatos() {
   if (!estadoSeleccionado) {
     document.getElementById("errorEstado").textContent = "Debe seleccionar APROBADO o RECHAZADO.";
@@ -667,6 +711,19 @@ async function guardarDatos() {
     const idGrupoV = await getNextIdGrupo();
     let registros = [];
 
+    // ✅ Lee una sola vez (mismo valor para todos los días del mes)
+    const conductor1V = getIntOrNull("conductor1");
+    const conductor2V = getIntOrNull("conductor2");
+    const conductor3V = getIntOrNull("conductor3");
+    const conductor4V = getIntOrNull("conductor4");
+    const conductor5V = getIntOrNull("conductor5");
+
+    const aar1V = getIntOrNull("aar1");
+    const aar2V = getIntOrNull("aar2");
+    const aar3V = getIntOrNull("aar3");
+    const aar4V = getIntOrNull("aar4");
+    const aar5V = getIntOrNull("aar5");
+
     document.querySelectorAll(".row").forEach(row => {
       let fechaTexto = row.querySelector("b")?.innerText;
       if (!fechaTexto) return;
@@ -703,7 +760,19 @@ async function guardarDatos() {
         observacion_general: obsGeneralV,
         maximo_transportado: maximoTransportadoV,
         responsable: responsableV,
-        estado: estadoSeleccionado
+        estado: estadoSeleccionado,
+
+        /* ✅ NUEVO: se guardan en tu tabla principal */
+        conductor1: conductor1V,
+        conductor2: conductor2V,
+        conductor3: conductor3V,
+        conductor4: conductor4V,
+        conductor5: conductor5V,
+        aar1: aar1V,
+        aar2: aar2V,
+        aar3: aar3V,
+        aar4: aar4V,
+        aar5: aar5V
       });
     });
 
@@ -734,6 +803,7 @@ async function guardarDatos() {
 pingBackend();
 activarSoloEnterosEnInputsCA();
 actualizarBotonAddCA();
+activarConsultaEstadosCA();
 </script>
 
 </body>
