@@ -399,80 +399,110 @@ function agregarFilaConductoresAar() {
 
   activarSoloEnterosEnInputsCA();
   actualizarBotonAddCA();
-  activarConsultaEstadosCA(); // ✅ engancha consultas a los nuevos inputs
+  activarEstadoNoDocsCA(); // ✅ engancha verificación a nuevos inputs
 }
 
-/* =========================
-   ✅ CONSULTA ESTADOS (BD)
-   - conductorX -> /estado-conductor/<cedula>
-   - aarX       -> /estado-aar/<cedula>
-   - Si estado = SIN DOCUMENTOS -> agrega a obsGeneral: "<cedula> SIN DOCUMENTOS"
-========================= */
-const sinDocsSet = new Set();
-
+/* =====================================================
+   ✅ NUEVO: CRUCE SIMPLE "EXISTE O NO" (NO TIENE DOCUMENTOS)
+   - vehiculos: /existe-vehiculo/<placa>
+   - conductores: /existe-conductor/<cedula>
+   - aar: /existe-aar/<cedula>
+===================================================== */
 function normalizarTexto(t) {
   return (t ?? "").toString().trim().toUpperCase();
 }
 
-function agregarSinDocumentosAObs(cedula) {
-  const c = normalizarTexto(cedula);
-  if (!c) return;
-
-  const linea = `${c} SIN DOCUMENTOS`;
-  if (sinDocsSet.has(linea)) return;
-
-  sinDocsSet.add(linea);
-
-  const actual = (document.getElementById("obsGeneral").value || "").toString();
-  const existe = actual.toUpperCase().includes(linea);
-  if (!existe) {
-    const sep = actual.trim() === "" ? "" : "\n";
-    document.getElementById("obsGeneral").value = actual + sep + linea;
-  }
-}
-
-async function consultarEstado(tipo, cedula) {
-  const c = normalizarTexto(cedula);
-  if (!c) return null;
-
-  const url = tipo === "CONDUCTOR"
-    ? `${API_BASE}/estado-conductor/${encodeURIComponent(c)}`
-    : `${API_BASE}/estado-aar/${encodeURIComponent(c)}`;
-
+async function existeVehiculo(placa) {
+  const p = normalizarTexto(placa).replace(/[^A-Z0-9]/g, "");
+  if (!p) return true;
   try {
-    const r = await fetch(url, { method: "GET" });
-    if (!r.ok) return null;
-    const j = await r.json().catch(() => null);
-    const est = normalizarTexto(j?.estado);
-    return est || null;
+    const r = await fetch(`${API_BASE}/existe-vehiculo/${encodeURIComponent(p)}`, { method: "GET" });
+    const j = await r.json().catch(() => ({}));
+    return j?.exists === true;
   } catch (e) {
-    console.error("Error consultando estado:", e);
-    return null;
+    console.error("existeVehiculo error:", e);
+    return true; // no bloquea si hay error
   }
 }
 
-function activarConsultaEstadosCA() {
+async function existeConductor(cedula) {
+  const c = (cedula ?? "").toString().trim();
+  if (!c) return true;
+  try {
+    const r = await fetch(`${API_BASE}/existe-conductor/${encodeURIComponent(c)}`, { method: "GET" });
+    const j = await r.json().catch(() => ({}));
+    return j?.exists === true;
+  } catch (e) {
+    console.error("existeConductor error:", e);
+    return true;
+  }
+}
+
+async function existeAar(cedula) {
+  const c = (cedula ?? "").toString().trim();
+  if (!c) return true;
+  try {
+    const r = await fetch(`${API_BASE}/existe-aar/${encodeURIComponent(c)}`, { method: "GET" });
+    const j = await r.json().catch(() => ({}));
+    return j?.exists === true;
+  } catch (e) {
+    console.error("existeAar error:", e);
+    return true;
+  }
+}
+
+/* ✅ PLACAS -> Si NO existe, poner OBSERVACIÓN del día: NO TIENE DOCUMENTOS */
+function activarPlacaNoDocs() {
+  document.querySelectorAll(".placa").forEach(inp => {
+    if (inp.dataset.noDocsBound === "1") return;
+    inp.dataset.noDocsBound = "1";
+
+    inp.addEventListener("blur", async () => {
+      const placa = inp.value || "";
+      if (!placa.trim()) return;
+
+      const ok = await existeVehiculo(placa);
+      if (ok) return;
+
+      const row = inp.closest(".row");
+      const obsInp = row?.querySelector("input[data-obs]");
+      if (!obsInp) return;
+
+      // Solo lo ponemos si está vacío o distinto (no pisamos otras observaciones del usuario si ya escribió)
+      const actual = normalizarTexto(obsInp.value);
+      if (!actual) {
+        obsInp.value = "NO TIENE DOCUMENTOS";
+      } else if (!actual.includes("NO TIENE DOCUMENTOS")) {
+        obsInp.value = actual + " | NO TIENE DOCUMENTOS";
+      }
+    });
+  });
+}
+
+/* ✅ CONDUCTORES/AAR -> Si NO existe, en ESTADO: NO TIENE DOCUMENTOS */
+function activarEstadoNoDocsCA() {
   for (let i = 1; i <= CA_MAX_FILAS; i++) {
     const inpC = document.getElementById(`conductor${i}`);
     const outC = document.getElementById(`estado_conductor${i}`);
-    const inpA = document.getElementById(`aar${i}`);
-    const outA = document.getElementById(`estado_aar${i}`);
-
-    if (inpC && !inpC.dataset.estadoBound) {
-      inpC.dataset.estadoBound = "1";
+    if (inpC && outC && inpC.dataset.chkBound !== "1") {
+      inpC.dataset.chkBound = "1";
       inpC.addEventListener("blur", async () => {
-        const est = await consultarEstado("CONDUCTOR", inpC.value);
-        if (outC) outC.value = est || "";
-        if (est === "SIN DOCUMENTOS") agregarSinDocumentosAObs(inpC.value);
+        const val = (inpC.value || "").trim();
+        if (!val) { outC.value = ""; return; }
+        const ok = await existeConductor(val);
+        outC.value = ok ? "" : "NO TIENE DOCUMENTOS";
       });
     }
 
-    if (inpA && !inpA.dataset.estadoBound) {
-      inpA.dataset.estadoBound = "1";
+    const inpA = document.getElementById(`aar${i}`);
+    const outA = document.getElementById(`estado_aar${i}`);
+    if (inpA && outA && inpA.dataset.chkBound !== "1") {
+      inpA.dataset.chkBound = "1";
       inpA.addEventListener("blur", async () => {
-        const est = await consultarEstado("AAR", inpA.value);
-        if (outA) outA.value = est || "";
-        if (est === "SIN DOCUMENTOS") agregarSinDocumentosAObs(inpA.value);
+        const val = (inpA.value || "").trim();
+        if (!val) { outA.value = ""; return; }
+        const ok = await existeAar(val);
+        outA.value = ok ? "" : "NO TIENE DOCUMENTOS";
       });
     }
   }
@@ -570,6 +600,7 @@ function generarDias() {
 
   activarValidaciones();
   activarValidacionOcupacionX();
+  activarPlacaNoDocs(); // ✅ NUEVO
 }
 
 function activarValidaciones() {
@@ -649,7 +680,7 @@ async function postRegistros(payload) {
 }
 
 /* =========================
-   ✅ NUEVO: leer enteros conductor/aar para guardar
+   ✅ leer enteros conductor/aar para guardar
 ========================= */
 function getIntOrNull(id) {
   const el = document.getElementById(id);
@@ -660,8 +691,17 @@ function getIntOrNull(id) {
   return Number.isFinite(n) ? n : null;
 }
 
+function getTextOrNull(id) {
+  const el = document.getElementById(id);
+  if (!el) return null;
+  const v = normalizarTexto(el.value);
+  return v === "" ? null : v;
+}
+
 /* =========================
-   ✅ GUARDAR (AQUI SE AGREGAN conductor1..5 y aar1..5)
+   ✅ GUARDAR
+   - guarda conductor/aar
+   - guarda estadoconductor/estadoaar (nuevos campos)
 ========================= */
 async function guardarDatos() {
   if (!estadoSeleccionado) {
@@ -711,7 +751,7 @@ async function guardarDatos() {
     const idGrupoV = await getNextIdGrupo();
     let registros = [];
 
-    // ✅ Lee una sola vez (mismo valor para todos los días del mes)
+    // ✅ Lee una sola vez (mismo valor para todos los días)
     const conductor1V = getIntOrNull("conductor1");
     const conductor2V = getIntOrNull("conductor2");
     const conductor3V = getIntOrNull("conductor3");
@@ -723,6 +763,19 @@ async function guardarDatos() {
     const aar3V = getIntOrNull("aar3");
     const aar4V = getIntOrNull("aar4");
     const aar5V = getIntOrNull("aar5");
+
+    // ✅ NUEVO: estados que se llenan con "NO TIENE DOCUMENTOS" o vacío
+    const estadoconductor1V = getTextOrNull("estado_conductor1");
+    const estadoconductor2V = getTextOrNull("estado_conductor2");
+    const estadoconductor3V = getTextOrNull("estado_conductor3");
+    const estadoconductor4V = getTextOrNull("estado_conductor4");
+    const estadoconductor5V = getTextOrNull("estado_conductor5");
+
+    const estadoaar1V = getTextOrNull("estado_aar1");
+    const estadoaar2V = getTextOrNull("estado_aar2");
+    const estadoaar3V = getTextOrNull("estado_aar3");
+    const estadoaar4V = getTextOrNull("estado_aar4");
+    const estadoaar5V = getTextOrNull("estado_aar5");
 
     document.querySelectorAll(".row").forEach(row => {
       let fechaTexto = row.querySelector("b")?.innerText;
@@ -762,7 +815,7 @@ async function guardarDatos() {
         responsable: responsableV,
         estado: estadoSeleccionado,
 
-        /* ✅ NUEVO: se guardan en tu tabla principal */
+        // ✅ ya existente (cédulas)
         conductor1: conductor1V,
         conductor2: conductor2V,
         conductor3: conductor3V,
@@ -772,7 +825,20 @@ async function guardarDatos() {
         aar2: aar2V,
         aar3: aar3V,
         aar4: aar4V,
-        aar5: aar5V
+        aar5: aar5V,
+
+        // ✅ NUEVO: estados para guardar
+        estadoconductor1: estadoconductor1V,
+        estadoconductor2: estadoconductor2V,
+        estadoconductor3: estadoconductor3V,
+        estadoconductor4: estadoconductor4V,
+        estadoconductor5: estadoconductor5V,
+
+        estadoaar1: estadoaar1V,
+        estadoaar2: estadoaar2V,
+        estadoaar3: estadoaar3V,
+        estadoaar4: estadoaar4V,
+        estadoaar5: estadoaar5V
       });
     });
 
@@ -803,7 +869,7 @@ async function guardarDatos() {
 pingBackend();
 activarSoloEnterosEnInputsCA();
 actualizarBotonAddCA();
-activarConsultaEstadosCA();
+activarEstadoNoDocsCA(); // ✅ NUEVO: activa para las 3 filas iniciales
 </script>
 
 </body>
