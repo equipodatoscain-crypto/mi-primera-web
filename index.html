@@ -186,6 +186,36 @@
     border-radius: 8px;
     border: 1px solid #e5e7eb;
   }
+
+  /* =====================================================
+     ✅ NUEVO: QUITAR FLECHITAS (SPINNERS) EN CAMPOS NUMÉRICOS
+     Solo aplica a inputs con class="no-spin"
+  ====================================================== */
+  input.no-spin::-webkit-outer-spin-button,
+  input.no-spin::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  input.no-spin {
+    -moz-appearance: textfield; /* Firefox */
+    appearance: textfield;
+  }
+
+  /* Botón + para agregar filas */
+  .btn-plus {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    font-size: 22px;
+    font-weight: bold;
+    background: #3155ff;
+    color: white;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
 </style>
 
 </head>
@@ -250,6 +280,56 @@
 
   <div id="daysContainer"></div>
 
+  <!-- =====================================================
+       ✅ NUEVOS CAMPOS: CONDUCTORES y AAR (MÁXIMO 5 FILAS)
+       - Fila 1 -> conductor1 / aar1
+       - Fila 2 -> conductor2 / aar2
+       - ...
+       - Fila 5 -> conductor5 / aar5
+       - Botón + solo permite agregar hasta 5
+       - Inputs numéricos: INT (solo dígitos) sin flechitas
+       - NO interfiere con nada existente
+  ====================================================== -->
+  <div style="margin-top:25px;">
+    <div class="header-row" style="grid-template-columns:1fr 1fr 1fr 1fr;">
+      <div>CONDUCTORES</div>
+      <div>ESTADO</div>
+      <div>AAR</div>
+      <div>ESTADO</div>
+    </div>
+
+    <div id="conductoresAarContainer">
+      <!-- FILA 1 -->
+      <div class="row" style="grid-template-columns:1fr 1fr 1fr 1fr;">
+        <input class="no-spin ca-int" inputmode="numeric" pattern="[0-9]*" type="text" id="conductor1" placeholder="">
+        <input type="text" id="estado_conductor1" placeholder="">
+        <input class="no-spin ca-int" inputmode="numeric" pattern="[0-9]*" type="text" id="aar1" placeholder="">
+        <input type="text" id="estado_aar1" placeholder="">
+      </div>
+
+      <!-- FILA 2 -->
+      <div class="row" style="grid-template-columns:1fr 1fr 1fr 1fr;">
+        <input class="no-spin ca-int" inputmode="numeric" pattern="[0-9]*" type="text" id="conductor2" placeholder="">
+        <input type="text" id="estado_conductor2" placeholder="">
+        <input class="no-spin ca-int" inputmode="numeric" pattern="[0-9]*" type="text" id="aar2" placeholder="">
+        <input type="text" id="estado_aar2" placeholder="">
+      </div>
+
+      <!-- FILA 3 -->
+      <div class="row" style="grid-template-columns:1fr 1fr 1fr 1fr;">
+        <input class="no-spin ca-int" inputmode="numeric" pattern="[0-9]*" type="text" id="conductor3" placeholder="">
+        <input type="text" id="estado_conductor3" placeholder="">
+        <input class="no-spin ca-int" inputmode="numeric" pattern="[0-9]*" type="text" id="aar3" placeholder="">
+        <input type="text" id="estado_aar3" placeholder="">
+      </div>
+    </div>
+
+    <div style="display:flex; justify-content:center; margin-top:10px;">
+      <button id="btnAddCA" class="btn-plus" type="button" onclick="agregarFilaConductoresAar()" title="Agregar fila">+</button>
+    </div>
+  </div>
+  <!-- ===================================================== -->
+
   <label>Observación General:</label>
   <textarea class="generalBox" id="obsGeneral" rows="4" style="resize:none;"></textarea>
 
@@ -271,8 +351,6 @@
 <script>
 /* =====================================================
    ✅ CONFIG BACKEND (SQL SERVER vía Render)
-   - Si tu backend está en Render, deja esta URL así.
-   - Si prefieres mismo dominio (proxy), puedes poner: ""
 ===================================================== */
 const API_BASE = "https://backend-recepcion-certificados.onrender.com";
 
@@ -308,6 +386,67 @@ function seleccionarEstado(estado) {
 
   if (estado === 'APROBADO') btnAprobado.classList.add('selected');
   if (estado === 'RECHAZADO') btnRechazado.classList.add('selected');
+}
+
+/* =====================================================
+   ✅ NUEVO (SOLO UI): CONDUCTORES/AAR (MAX 5)
+   - Empieza con 3 filas como venías mostrando
+   - Botón + agrega fila 4 y 5
+   - Al llegar a 5, deshabilita el +
+   - IDs EXACTOS para tu BD: conductor1..5 y aar1..5
+===================================================== */
+const CA_MAX_FILAS = 5;
+let caFilaCount = 3; // ya existen 3 filas en el HTML
+
+function activarSoloEnterosEnInputsCA() {
+  document.querySelectorAll(".ca-int").forEach(inp => {
+    if (inp.dataset.caBound === "1") return; // evita duplicar listeners
+    inp.dataset.caBound = "1";
+
+    inp.addEventListener("input", function () {
+      let v = (this.value ?? "").toString();
+      v = v.replace(/[^\d]/g, ""); // solo dígitos => INT
+      this.value = v;
+    });
+  });
+}
+
+function actualizarBotonAddCA() {
+  const btn = document.getElementById("btnAddCA");
+  if (!btn) return;
+
+  if (caFilaCount >= CA_MAX_FILAS) {
+    btn.disabled = true;
+    btn.style.opacity = "0.6";
+    btn.title = "Máximo 5 filas";
+  } else {
+    btn.disabled = false;
+    btn.style.opacity = "1";
+    btn.title = "Agregar fila";
+  }
+}
+
+function agregarFilaConductoresAar() {
+  if (caFilaCount >= CA_MAX_FILAS) {
+    actualizarBotonAddCA();
+    return;
+  }
+
+  caFilaCount += 1;
+  const cont = document.getElementById("conductoresAarContainer");
+
+  const html = `
+    <div class="row" style="grid-template-columns:1fr 1fr 1fr 1fr;">
+      <input class="no-spin ca-int" inputmode="numeric" pattern="[0-9]*" type="text" id="conductor${caFilaCount}" placeholder="">
+      <input type="text" id="estado_conductor${caFilaCount}" placeholder="">
+      <input class="no-spin ca-int" inputmode="numeric" pattern="[0-9]*" type="text" id="aar${caFilaCount}" placeholder="">
+      <input type="text" id="estado_aar${caFilaCount}" placeholder="">
+    </div>
+  `;
+  cont.insertAdjacentHTML("beforeend", html);
+
+  activarSoloEnterosEnInputsCA();
+  actualizarBotonAddCA();
 }
 
 function generarDias() {
@@ -429,9 +568,6 @@ function activarValidacionOcupacionX() {
 
 /* =====================================================
    ✅ BACKEND HELPERS
-   - /health ya lo tienes (según tu captura)
-   - /next-id-grupo y /recepcion-certificados:
-     si no existen aún, el HTML hace fallback para id_grupo
 ===================================================== */
 async function pingBackend() {
   const el = document.getElementById("miniEstado");
@@ -448,18 +584,15 @@ async function pingBackend() {
 }
 
 async function getNextIdGrupo() {
-  // Intenta pedir al backend un consecutivo
   try {
     const r = await fetch(`${API_BASE}/next-id-grupo`, { method: "GET" });
     if (!r.ok) throw new Error("next-id-grupo no OK");
     const j = await r.json();
-    // acepta {id_grupo: 123} o {next:123} o {value:123}
     const v = j?.id_grupo ?? j?.next ?? j?.value;
     if (typeof v === "number" && Number.isFinite(v)) return v;
     if (typeof v === "string" && v.trim() !== "" && !isNaN(Number(v))) return Number(v);
     throw new Error("Respuesta next-id-grupo inválida");
   } catch (e) {
-    // Fallback seguro
     const fallback = Date.now();
     console.warn("⚠ No existe /next-id-grupo o falló. Usando fallback id_grupo =", fallback);
     return fallback;
@@ -467,16 +600,12 @@ async function getNextIdGrupo() {
 }
 
 async function postRegistros(payload) {
-  // Envía al backend para que inserte en SQL Server
-  // Endpoint sugerido: POST /recepcion-certificados
-  // Body: { id_grupo, registros: [...] }
   const r = await fetch(`${API_BASE}/recepcion-certificados`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
 
-  // Intentar leer JSON para mensaje de error/ok
   let j = null;
   try { j = await r.json(); } catch (_) {}
 
@@ -488,7 +617,7 @@ async function postRegistros(payload) {
 }
 
 /* =====================================================
-   ✅ GUARDAR (ahora a SQL Server vía backend)
+   ✅ GUARDAR (NO se tocó tu lógica existente)
 ===================================================== */
 async function guardarDatos() {
   if (!estadoSeleccionado) {
@@ -530,15 +659,12 @@ async function guardarDatos() {
 
   if (obsGeneralV === "") obsGeneralV = null;
 
-  // deshabilitar botón mientras guarda
   const btn = document.getElementById("btnGuardar");
   btn.disabled = true;
   btn.textContent = "GUARDANDO...";
 
   try {
-    // ✅ id_grupo
     const idGrupoV = await getNextIdGrupo();
-
     let registros = [];
 
     document.querySelectorAll(".row").forEach(row => {
@@ -588,7 +714,6 @@ async function guardarDatos() {
 
     console.log(`📤 Enviando al backend (id_grupo=${idGrupoV})`, registros);
 
-    // ✅ ENVÍO A SQL SERVER (backend)
     const resp = await postRegistros({ id_grupo: idGrupoV, registros });
 
     alert(`✅ Guardado exitoso. ID_GRUPO: ${idGrupoV}`);
@@ -607,6 +732,8 @@ async function guardarDatos() {
 
 /* iniciar */
 pingBackend();
+activarSoloEnterosEnInputsCA();
+actualizarBotonAddCA();
 </script>
 
 </body>
