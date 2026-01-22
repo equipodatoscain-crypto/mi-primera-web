@@ -270,11 +270,7 @@
   <input id="ruta" placeholder="Ejemplo: U-001">
   <div id="errorR" class="msg"></div>
 
-  <button class="btn" onclick="generarDias()">Generar días del mes</button>
-
-  <div id="daysContainer"></div>
-
-  <!-- ✅ CONDUCTORES/AAR (MAX 5) -->
+  <!-- ✅ CONDUCTORES/AAR (MAX 5) - AHORA VA ANTES DE GENERAR DÍAS -->
   <div style="margin-top:25px;">
     <div class="header-row" style="grid-template-columns:1fr 1fr 1fr 1fr;">
       <div>CONDUCTORES</div>
@@ -311,6 +307,11 @@
     </div>
   </div>
 
+  <!-- ✅ AHORA SÍ: GENERAR DÍAS -->
+  <button class="btn" onclick="generarDias()">Generar días del mes</button>
+
+  <div id="daysContainer"></div>
+
   <label>Observación General:</label>
   <textarea class="generalBox" id="obsGeneral" rows="4" style="resize:none;"></textarea>
 
@@ -341,7 +342,8 @@ function irAreaOperativaConClave() {
 
 let estadoSeleccionado = null;
 
-const placasValidas = ["AAA111","WNX955"];
+// ✅ Ya NO usamos placasValidas ni mensaje "PLACA NO AUTORIZADA"
+// ✅ Solo dejamos validación de FORMATO
 const formatoPlacaRegExp = /^[A-Z]{3}[0-9]{3}$/;
 
 function seleccionarEstado(estado) {
@@ -403,13 +405,13 @@ function agregarFilaConductoresAar() {
 }
 
 /* =====================================================
-   ✅ CRUCE "EXISTE O NO" (NO TIENE DOCUMENTOS)
+   ✅ CRUCE "EXISTE O NO"
 ===================================================== */
 function normalizarTexto(t) {
   return (t ?? "").toString().trim().toUpperCase();
 }
 
-/* ✅ AJUSTE: endpoint correcto /vehiculo-existe/:placa */
+/* ✅ VEHICULO: endpoint correcto /vehiculo-existe/:placa */
 async function existeVehiculo(placa) {
   const p = normalizarTexto(placa).replace(/[^A-Z0-9]/g, "");
   if (!p) return true;
@@ -449,40 +451,73 @@ async function existeAar(cedula) {
   }
 }
 
-/* ✅ helper: agrega texto a OBS sin duplicar */
-function agregarObsSinDuplicar(obsInp, texto) {
-  if (!obsInp) return;
-  const actual = (obsInp.value || "").toString().trim().toUpperCase();
-  const tag = (texto || "").toString().trim().toUpperCase();
-  if (!tag) return;
-
-  if (!actual) {
-    obsInp.value = tag;
-    return;
-  }
-  if (actual.includes(tag)) return;
-
-  obsInp.value = `${actual} | ${tag}`;
+/* ✅ helpers OBS (agregar/quitar sin duplicar) */
+function obsToPartes(obsValue) {
+  const txt = (obsValue || "").toString().trim();
+  if (!txt) return [];
+  return txt.split("|").map(s => s.trim()).filter(Boolean);
 }
 
-/* ✅ PLACAS (R1 y R2) -> Si NO existe, en OBSERVACIÓN del día agregar: "PLACA SIN DOCUMENTOS" */
+function partesToObs(partes) {
+  return (partes || []).map(s => s.trim()).filter(Boolean).join(" | ");
+}
+
+function agregarObsSinDuplicar(obsInp, texto) {
+  if (!obsInp) return;
+  const tag = normalizarTexto(texto);
+  if (!tag) return;
+
+  const partes = obsToPartes(obsInp.value).map(p => normalizarTexto(p));
+  if (partes.includes(tag)) return;
+
+  partes.push(tag);
+  obsInp.value = partesToObs(partes);
+}
+
+function quitarObsTag(obsInp, texto) {
+  if (!obsInp) return;
+  const tag = normalizarTexto(texto);
+  if (!tag) return;
+
+  const partes = obsToPartes(obsInp.value);
+  const filtradas = partes.filter(p => normalizarTexto(p) !== tag);
+  obsInp.value = partesToObs(filtradas);
+}
+
+/* ✅ PLACAS (R1 y R2) -> Si NO existe:
+   En OBSERVACIÓN del día agrega: "<PLACA> PLACA SIN DOCUMENTOS"
+   Si ambas no existen, quedan ambas.
+   Además: si el usuario cambia la placa, se quita el tag anterior de ese mismo input.
+*/
 function activarPlacaNoDocs() {
   document.querySelectorAll(".placa").forEach(inp => {
     if (inp.dataset.noDocsBound === "1") return;
     inp.dataset.noDocsBound = "1";
 
     inp.addEventListener("blur", async () => {
-      const placa = inp.value || "";
-      if (!placa.trim()) return;
-
-      const ok = await existeVehiculo(placa);
-      if (ok) return;
-
       const row = inp.closest(".row");
       const obsInp = row?.querySelector("input[data-obs]");
       if (!obsInp) return;
 
-      agregarObsSinDuplicar(obsInp, "PLACA SIN DOCUMENTOS");
+      // 🔁 si antes este input agregó un tag, lo quitamos (para evitar basura si corrige la placa)
+      const tagAnterior = inp.dataset.noDocsTag || "";
+      if (tagAnterior) quitarObsTag(obsInp, tagAnterior);
+
+      const placaNorm = normalizarTexto(inp.value).replace(/[^A-Z0-9]/g, "");
+      if (!placaNorm) {
+        inp.dataset.noDocsTag = "";
+        return;
+      }
+
+      const ok = await existeVehiculo(placaNorm);
+      if (ok) {
+        inp.dataset.noDocsTag = "";
+        return;
+      }
+
+      const tagNuevo = `${placaNorm} PLACA SIN DOCUMENTOS`;
+      agregarObsSinDuplicar(obsInp, tagNuevo);
+      inp.dataset.noDocsTag = tagNuevo;
     });
   });
 }
@@ -606,9 +641,9 @@ function generarDias() {
     `;
   }
 
-  activarValidaciones();
+  activarValidaciones();        // ✅ ahora solo formato
   activarValidacionOcupacionX();
-  activarPlacaNoDocs(); // ✅ AJUSTADO: agrega "PLACA SIN DOCUMENTOS"
+  activarPlacaNoDocs();         // ✅ agrega "<PLACA> PLACA SIN DOCUMENTOS"
 }
 
 function activarValidaciones() {
@@ -620,10 +655,11 @@ function activarValidaciones() {
       let id = this.dataset.dia ? `msg1-${this.dataset.dia}` : `msg2-${this.dataset.dia2}`;
       let msgBox = document.getElementById(id);
 
+      if (!msgBox) return;
+
       if (val.length === 0) msgBox.textContent = "";
       else if (!formatoPlacaRegExp.test(val)) msgBox.textContent = "FORMATO: XXX999";
-      else if (!placasValidas.includes(val)) msgBox.textContent = "PLACA NO AUTORIZADA";
-      else msgBox.textContent = "";
+      else msgBox.textContent = ""; // ✅ ya NO mostramos "PLACA NO AUTORIZADA"
     });
   });
 }
@@ -733,7 +769,7 @@ async function guardarDatos() {
 
   let errorPlacaEncontrado = false;
   document.querySelectorAll(".placa").forEach(inp => {
-    let placa = inp.value.toUpperCase().trim();
+    let placa = (inp.value || "").toUpperCase().trim();
     if (placa.length > 0 && !formatoPlacaRegExp.test(placa)) {
       errorPlacaEncontrado = true;
       inp.style.border = '2px solid red';
@@ -757,6 +793,7 @@ async function guardarDatos() {
     const idGrupoV = await getNextIdGrupo();
     let registros = [];
 
+    // ✅ Lee una sola vez (mismo valor para todos los días)
     const conductor1V = getIntOrNull("conductor1");
     const conductor2V = getIntOrNull("conductor2");
     const conductor3V = getIntOrNull("conductor3");
@@ -769,6 +806,7 @@ async function guardarDatos() {
     const aar4V = getIntOrNull("aar4");
     const aar5V = getIntOrNull("aar5");
 
+    // ✅ estados que se llenan con "NO TIENE DOCUMENTOS" o vacío
     const estadoconductor1V = getTextOrNull("estado_conductor1");
     const estadoconductor2V = getTextOrNull("estado_conductor2");
     const estadoconductor3V = getTextOrNull("estado_conductor3");
@@ -819,6 +857,7 @@ async function guardarDatos() {
         responsable: responsableV,
         estado: estadoSeleccionado,
 
+        // ✅ cédulas
         conductor1: conductor1V,
         conductor2: conductor2V,
         conductor3: conductor3V,
@@ -830,6 +869,7 @@ async function guardarDatos() {
         aar4: aar4V,
         aar5: aar5V,
 
+        // ✅ estados
         estadoconductor1: estadoconductor1V,
         estadoconductor2: estadoconductor2V,
         estadoconductor3: estadoconductor3V,
