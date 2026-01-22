@@ -403,20 +403,18 @@ function agregarFilaConductoresAar() {
 }
 
 /* =====================================================
-   ✅ NUEVO: CRUCE SIMPLE "EXISTE O NO" (NO TIENE DOCUMENTOS)
-   - vehiculos: /existe-vehiculo/<placa>
-   - conductores: /existe-conductor/<cedula>
-   - aar: /existe-aar/<cedula>
+   ✅ CRUCE "EXISTE O NO" (NO TIENE DOCUMENTOS)
 ===================================================== */
 function normalizarTexto(t) {
   return (t ?? "").toString().trim().toUpperCase();
 }
 
+/* ✅ AJUSTE: endpoint correcto /vehiculo-existe/:placa */
 async function existeVehiculo(placa) {
   const p = normalizarTexto(placa).replace(/[^A-Z0-9]/g, "");
   if (!p) return true;
   try {
-    const r = await fetch(`${API_BASE}/existe-vehiculo/${encodeURIComponent(p)}`, { method: "GET" });
+    const r = await fetch(`${API_BASE}/vehiculo-existe/${encodeURIComponent(p)}`, { method: "GET" });
     const j = await r.json().catch(() => ({}));
     return j?.exists === true;
   } catch (e) {
@@ -451,7 +449,23 @@ async function existeAar(cedula) {
   }
 }
 
-/* ✅ PLACAS -> Si NO existe, poner OBSERVACIÓN del día: NO TIENE DOCUMENTOS */
+/* ✅ helper: agrega texto a OBS sin duplicar */
+function agregarObsSinDuplicar(obsInp, texto) {
+  if (!obsInp) return;
+  const actual = (obsInp.value || "").toString().trim().toUpperCase();
+  const tag = (texto || "").toString().trim().toUpperCase();
+  if (!tag) return;
+
+  if (!actual) {
+    obsInp.value = tag;
+    return;
+  }
+  if (actual.includes(tag)) return;
+
+  obsInp.value = `${actual} | ${tag}`;
+}
+
+/* ✅ PLACAS (R1 y R2) -> Si NO existe, en OBSERVACIÓN del día agregar: "PLACA SIN DOCUMENTOS" */
 function activarPlacaNoDocs() {
   document.querySelectorAll(".placa").forEach(inp => {
     if (inp.dataset.noDocsBound === "1") return;
@@ -468,13 +482,7 @@ function activarPlacaNoDocs() {
       const obsInp = row?.querySelector("input[data-obs]");
       if (!obsInp) return;
 
-      // Solo lo ponemos si está vacío o distinto (no pisamos otras observaciones del usuario si ya escribió)
-      const actual = normalizarTexto(obsInp.value);
-      if (!actual) {
-        obsInp.value = "NO TIENE DOCUMENTOS";
-      } else if (!actual.includes("NO TIENE DOCUMENTOS")) {
-        obsInp.value = actual + " | NO TIENE DOCUMENTOS";
-      }
+      agregarObsSinDuplicar(obsInp, "PLACA SIN DOCUMENTOS");
     });
   });
 }
@@ -600,7 +608,7 @@ function generarDias() {
 
   activarValidaciones();
   activarValidacionOcupacionX();
-  activarPlacaNoDocs(); // ✅ NUEVO
+  activarPlacaNoDocs(); // ✅ AJUSTADO: agrega "PLACA SIN DOCUMENTOS"
 }
 
 function activarValidaciones() {
@@ -700,8 +708,6 @@ function getTextOrNull(id) {
 
 /* =========================
    ✅ GUARDAR
-   - guarda conductor/aar
-   - guarda estadoconductor/estadoaar (nuevos campos)
 ========================= */
 async function guardarDatos() {
   if (!estadoSeleccionado) {
@@ -751,7 +757,6 @@ async function guardarDatos() {
     const idGrupoV = await getNextIdGrupo();
     let registros = [];
 
-    // ✅ Lee una sola vez (mismo valor para todos los días)
     const conductor1V = getIntOrNull("conductor1");
     const conductor2V = getIntOrNull("conductor2");
     const conductor3V = getIntOrNull("conductor3");
@@ -764,7 +769,6 @@ async function guardarDatos() {
     const aar4V = getIntOrNull("aar4");
     const aar5V = getIntOrNull("aar5");
 
-    // ✅ NUEVO: estados que se llenan con "NO TIENE DOCUMENTOS" o vacío
     const estadoconductor1V = getTextOrNull("estado_conductor1");
     const estadoconductor2V = getTextOrNull("estado_conductor2");
     const estadoconductor3V = getTextOrNull("estado_conductor3");
@@ -815,7 +819,6 @@ async function guardarDatos() {
         responsable: responsableV,
         estado: estadoSeleccionado,
 
-        // ✅ ya existente (cédulas)
         conductor1: conductor1V,
         conductor2: conductor2V,
         conductor3: conductor3V,
@@ -827,7 +830,6 @@ async function guardarDatos() {
         aar4: aar4V,
         aar5: aar5V,
 
-        // ✅ NUEVO: estados para guardar
         estadoconductor1: estadoconductor1V,
         estadoconductor2: estadoconductor2V,
         estadoconductor3: estadoconductor3V,
@@ -869,7 +871,7 @@ async function guardarDatos() {
 pingBackend();
 activarSoloEnterosEnInputsCA();
 actualizarBotonAddCA();
-activarEstadoNoDocsCA(); // ✅ NUEVO: activa para las 3 filas iniciales
+activarEstadoNoDocsCA(); // ✅ activa para las 3 filas iniciales
 </script>
 
 </body>
