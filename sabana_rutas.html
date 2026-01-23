@@ -101,7 +101,7 @@
 
       <div class="small">
         El Excel de sábana debe tener estas columnas (tal cual o muy parecido):<br>
-        <b>Segmento Operación</b>, <b>Proveedor</b>, <b>Código Ruta</b>, <b>Estado</b>.
+        <b>Número Contrato</b>, <b>Segmento Operación</b>, <b>Proveedor</b>, <b>Código Ruta</b>, <b>Estado</b>.
         <br><br>
         *Se guardará el Año/Mes que selecciones arriba para todas las filas.*
       </div>
@@ -267,12 +267,21 @@
         return null;
       };
 
+      // ✅ AJUSTE: detectar "Número Contrato"
+      const colContrato = pick([
+        "numero contrato","número contrato",
+        "numero de contrato","número de contrato",
+        "contrato","numero_contrato","número_contrato"
+      ]);
+
       const colSeg = pick(["segmento operacion","segmento operación","segmento"]);
       const colProv = pick(["proveedor"]);
       const colRuta = pick(["codigo ruta","código ruta","codigo de ruta","ruta","codigo_ruta"]);
       const colEstado = pick(["estado"]);
 
       const faltantes = [];
+      // ✅ AJUSTE: agregar faltante de contrato
+      if(!colContrato) faltantes.push("Número Contrato");
       if(!colSeg) faltantes.push("Segmento Operación");
       if(!colProv) faltantes.push("Proveedor");
       if(!colRuta) faltantes.push("Código Ruta");
@@ -286,14 +295,18 @@
 
       // Convertir a formato que espera el backend
       const rowsToSend = raw.map(r => {
+        // ✅ AJUSTE: incluir contrato
+        const contrato = norm(r[colContrato]);
         const seg = norm(r[colSeg]);
         const prov = norm(r[colProv]);
         const ruta = norm(r[colRuta]);
         const est  = norm(r[colEstado]);
 
-        if(!seg && !prov && !ruta && !est) return null;
+        if(!contrato && !seg && !prov && !ruta && !est) return null;
 
         return {
+          // ✅ AJUSTE: enviar NumeroContrato
+          NumeroContrato: contrato,
           SegmentoOperacion: seg,
           Proveedor: prov,
           CodigoRuta: ruta,
@@ -309,19 +322,6 @@
 
       setStatus(`<span class="warn">Enviando al servidor para reemplazar ${mesLabel}... (filas: ${rowsToSend.length})</span>`);
       showProgress(15);
-
-      // Enviar en chunks para evitar payload gigante (10mb)
-      // Ajuste: tu backend tiene express limit 10mb, por eso chunking.
-      const CHUNK = 300; // ajusta si necesitas (300 suele ser seguro)
-      const parts = chunkArray(rowsToSend, CHUNK);
-
-      // Estrategia: 1er chunk lleva replace=true (borra), los demás solo insert.
-      // PERO como aún no existe el backend, aquí mandamos TODO con un solo replace por simplicidad.
-      // En el backend final haremos replace completo con body.rows grande o por lotes.
-      // Para no romper por tamaño: hacemos múltiples llamadas:
-      // - primera: /sabana/replace (borra e inserta chunk)
-      // - siguientes: /sabana/append (solo inserta) -> ESTE endpoint lo haremos luego.
-      // Hoy: lo dejamos en modo "solo 1 llamada" y avisamos si se pasa.
 
       // ✅ Si cabe en 10mb, hacemos 1 sola llamada:
       const payload = { anio, mes, rows: rowsToSend };
@@ -341,7 +341,6 @@
         return;
 
       }catch(err){
-        // Si falla por tamaño, dejamos mensaje claro (lo resolvemos en backend con append por lotes)
         hideProgress();
         console.error(err);
         setStatus(
@@ -361,7 +360,6 @@
 
   // ==========================
   // REPORTE: CERTIFICADOS VS SABANA
-  // (Listo en el HTML, endpoints se crean en backend luego)
   // ==========================
   async function generarReporteCruce(){
     try{
@@ -380,7 +378,7 @@
       setStatus(`<span class="warn">Generando reporte para ${mesLabel}...</span>`);
       showProgress(10);
 
-      // 1) traer sabana del mes/año (endpoint lo haremos en backend)
+      // 1) traer sabana del mes/año
       let sabana = [];
       try{
         const respSab = await apiFetch(`/sabana/by-period?anio=${encodeURIComponent(anio)}&mes=${encodeURIComponent(mes)}`, { method:"GET" });
@@ -401,7 +399,7 @@
 
       showProgress(35);
 
-      // 2) traer certificados APROBADOS del mes/año (endpoint lo haremos en backend)
+      // 2) traer certificados APROBADOS del mes/año
       let certificadosAprob = [];
       try{
         const respC = await apiFetch(`/certificados/aprobados?anio=${encodeURIComponent(anio)}&mes=${encodeURIComponent(mes)}`, { method:"GET" });
@@ -444,6 +442,10 @@
         return {
           año: s.año ?? anio,
           mes: (s.mes ?? mes).toString().toUpperCase(),
+
+          // ✅ AJUSTE: incluir Número Contrato en el reporte
+          "Número Contrato": s["Número Contrato"] ?? s.NumeroContrato ?? s.numero_contrato ?? "",
+
           "Segmento Operación": s["Segmento Operación"] ?? s.SegmentoOperacion ?? s.segmento_operacion ?? "",
           "Proveedor": s["Proveedor"] ?? s.Proveedor ?? "",
           "Código Ruta": s["Código Ruta"] ?? s.CodigoRuta ?? s.codigo_ruta ?? "",
@@ -480,8 +482,9 @@
       }).sort((a,b)=> a.PROVEEDOR.localeCompare(b.PROVEEDOR));
 
       // 5) export excel
+      // ✅ AJUSTE: agregar "Número Contrato" a columnasCruce
       const columnasCruce = [
-        "año","mes","Segmento Operación","Proveedor","Código Ruta","Estado (Sábana)",
+        "año","mes","Número Contrato","Segmento Operación","Proveedor","Código Ruta","Estado (Sábana)",
         "CERTIFICADO_RECIBIDO","FECHA_RECIBIDO","ESTADO_CERTIFICADO"
       ];
 
@@ -519,4 +522,3 @@
 
 </body>
 </html>
-
