@@ -267,7 +267,7 @@
         return null;
       };
 
-      // ✅ AJUSTE: detectar "Número Contrato"
+      // ✅ Detectar "Número Contrato"
       const colContrato = pick([
         "numero contrato","número contrato",
         "numero de contrato","número de contrato",
@@ -280,7 +280,6 @@
       const colEstado = pick(["estado"]);
 
       const faltantes = [];
-      // ✅ AJUSTE: agregar faltante de contrato
       if(!colContrato) faltantes.push("Número Contrato");
       if(!colSeg) faltantes.push("Segmento Operación");
       if(!colProv) faltantes.push("Proveedor");
@@ -295,7 +294,6 @@
 
       // Convertir a formato que espera el backend
       const rowsToSend = raw.map(r => {
-        // ✅ AJUSTE: incluir contrato
         const contrato = norm(r[colContrato]);
         const seg = norm(r[colSeg]);
         const prov = norm(r[colProv]);
@@ -305,7 +303,6 @@
         if(!contrato && !seg && !prov && !ruta && !est) return null;
 
         return {
-          // ✅ AJUSTE: enviar NumeroContrato
           NumeroContrato: contrato,
           SegmentoOperacion: seg,
           Proveedor: prov,
@@ -360,6 +357,7 @@
 
   // ==========================
   // REPORTE: CERTIFICADOS VS SABANA
+  // (SOLO APROBADO: viene del endpoint /certificados/aprobados)
   // ==========================
   async function generarReporteCruce(){
     try{
@@ -434,7 +432,7 @@
         }
       });
 
-      // 3) hoja 1 cruce
+      // 3) hoja 1 cruce (incluye Número Contrato)
       const cruce = sabana.map(s => {
         const ruta = norm(s["Código Ruta"] ?? s.CodigoRuta ?? s.codigo_ruta ?? "");
         const info = mapRuta[ruta];
@@ -443,7 +441,6 @@
           año: s.año ?? anio,
           mes: (s.mes ?? mes).toString().toUpperCase(),
 
-          // ✅ AJUSTE: incluir Número Contrato en el reporte
           "Número Contrato": s["Número Contrato"] ?? s.NumeroContrato ?? s.numero_contrato ?? "",
 
           "Segmento Operación": s["Segmento Operación"] ?? s.SegmentoOperacion ?? s.segmento_operacion ?? "",
@@ -459,14 +456,26 @@
 
       showProgress(75);
 
-      // 4) hoja 2 resumen por proveedor
+      // 4) hoja 2 resumen por proveedor (incluye lista de contratos)
       const resumen = {};
       cruce.forEach(r => {
         const prov = (r["Proveedor"] ?? "").toString().trim().toUpperCase() || "SIN PROVEEDOR";
         if(!resumen[prov]){
-          resumen[prov] = { PROVEEDOR: prov, TOTAL_RUTAS: 0, RECIBIDOS: 0, PENDIENTES: 0, _fechas: new Set() };
+          resumen[prov] = {
+            PROVEEDOR: prov,
+            TOTAL_RUTAS: 0,
+            RECIBIDOS: 0,
+            PENDIENTES: 0,
+            _fechas: new Set(),
+            _contratos: new Set()
+          };
         }
+
         resumen[prov].TOTAL_RUTAS += 1;
+
+        const contratoRow = (r["Número Contrato"] ?? "").toString().trim();
+        if(contratoRow) resumen[prov]._contratos.add(contratoRow);
+
         if(r.CERTIFICADO_RECIBIDO === "SI"){
           resumen[prov].RECIBIDOS += 1;
           if(r.FECHA_RECIBIDO) resumen[prov]._fechas.add(r.FECHA_RECIBIDO);
@@ -475,21 +484,27 @@
 
       const resumenArr = Object.values(resumen).map(x => {
         x.PENDIENTES = x.TOTAL_RUTAS - x.RECIBIDOS;
+
+        const contratos = Array.from(x._contratos).sort();
         const fechas = Array.from(x._fechas).sort();
+
+        delete x._contratos;
         delete x._fechas;
+
+        x.NUMEROS_CONTRATO = contratos.join(", ");
         x.FECHAS_RECIBIDAS = fechas.join(", ");
+
         return x;
       }).sort((a,b)=> a.PROVEEDOR.localeCompare(b.PROVEEDOR));
 
       // 5) export excel
-      // ✅ AJUSTE: agregar "Número Contrato" a columnasCruce
       const columnasCruce = [
         "año","mes","Número Contrato","Segmento Operación","Proveedor","Código Ruta","Estado (Sábana)",
         "CERTIFICADO_RECIBIDO","FECHA_RECIBIDO","ESTADO_CERTIFICADO"
       ];
 
       const columnasResumen = [
-        "PROVEEDOR","TOTAL_RUTAS","RECIBIDOS","PENDIENTES","FECHAS_RECIBIDAS"
+        "PROVEEDOR","TOTAL_RUTAS","RECIBIDOS","PENDIENTES","NUMEROS_CONTRATO","FECHAS_RECIBIDAS"
       ];
 
       const ws1 = XLSX.utils.json_to_sheet(cruce, { header: columnasCruce });
