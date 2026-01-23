@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Sábana vs Certificados</title>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@1.35.7"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
 <style>
@@ -102,7 +101,7 @@
 
       <div class="small">
         El Excel de sábana debe tener estas columnas (tal cual o muy parecido):<br>
-        <b>Año</b>, <b>Mes</b>, <b>Segmento Operación</b>, <b>Proveedor</b>, <b>Código Ruta</b>, <b>Estado</b>.
+        <b>Segmento Operación</b>, <b>Proveedor</b>, <b>Código Ruta</b>, <b>Estado</b>.
         <br><br>
         *Se guardará el Año/Mes que selecciones arriba para todas las filas.*
       </div>
@@ -119,17 +118,9 @@
 
 <script>
   // ==========================
-  // ✅ SUPABASE CONFIG
+  // ✅ CONFIG BACKEND (TU API)
   // ==========================
-  const SUPABASE_URL = "https://vdsqkhajbfevpgeuvfbd.supabase.co";
-  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZkc3FraGFqYmZldnBnZXV2ZmJkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM2MDg3MTIsImV4cCI6MjA3OTE4NDcxMn0.OexzIcRC_F7pnFijSQGZVpXN1xdsDw8zuGR1gFHTyuI";
-
-  const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-    headers: {
-      apikey: SUPABASE_ANON_KEY,
-      Authorization: "Bearer " + SUPABASE_ANON_KEY
-    }
-  });
+  const API_BASE = "http://localhost:10000"; // tu backend actual
 
   // ==========================
   // HELPERS UI
@@ -169,32 +160,28 @@
     return (v ?? "").toString().trim().toUpperCase();
   }
 
-  function titleCaseMes(mesUpper){
-    const m = (mesUpper || "").toString().trim().toLowerCase();
-    if(!m) return "";
-    return m.charAt(0).toUpperCase() + m.slice(1);
-  }
-
   // ==========================
-  // FETCH ALL (paginación)
+  // API helper
   // ==========================
-  async function fetchAll(table, selectStr, filtersFn){
-    let page = 0;
-    let rows = [];
-    const limit = 1000;
+  async function apiFetch(path, options){
+    const url = API_BASE + path;
+    const res = await fetch(url, {
+      headers: { "Content-Type":"application/json" },
+      ...options
+    });
 
-    while(true){
-      let q = client.from(table).select(selectStr).range(page*limit, page*limit + limit - 1);
-      if (filtersFn) q = filtersFn(q);
+    const text = await res.text();
+    let json = null;
+    try { json = text ? JSON.parse(text) : null; } catch { json = null; }
 
-      const { data, error } = await q;
-      if(error) throw error;
-
-      rows = rows.concat(data || []);
-      if(!data || data.length < limit) break;
-      page++;
+    if(!res.ok){
+      const msg = (json && (json.error || json.message)) ? (json.error || json.message) : (text || ("HTTP " + res.status));
+      throw new Error(msg);
     }
-    return rows;
+    if(json && json.ok === false){
+      throw new Error(json.error || json.message || "Error API");
+    }
+    return json;
   }
 
   // ==========================
@@ -205,38 +192,22 @@
     el.innerHTML = `<span class="warn">Cargando listado...</span>`;
 
     try{
-      const rows = await fetchAll(
-        "sabana_rutas",
-        "año, mes",
-        (q) => q
-      );
+      const resp = await apiFetch("/sabana/list", { method:"GET" });
+      const rows = resp.data || [];
 
       if(!rows || rows.length === 0){
         el.innerHTML = `<span class="warn">Aún no hay sábanas cargadas.</span>`;
         return;
       }
 
-      const map = {};
-      rows.forEach(r => {
-        const a = norm(r.año);
-        const m = norm(r.mes);
-        if(!a || !m) return;
-        const key = `${a}|${m}`;
-        map[key] = (map[key] || 0) + 1;
-      });
-
-      const items = Object.keys(map).map(k => {
-        const [a,m] = k.split("|");
-        return { año:a, mes:m, count: map[k] };
-      });
-
-      items.sort((x,y)=>{
-        if(x.año !== y.año) return y.año.localeCompare(x.año);
-        return x.mes.localeCompare(y.mes);
-      });
+      const items = rows.map(r => ({
+        año: (r.año ?? "").toString(),
+        mes: (r.mes ?? "").toString().toUpperCase(),
+        registros: r.registros ?? 0
+      }));
 
       el.innerHTML = `<ul>${items.map(it =>
-        `<li><b>${it.mes}-${it.año}</b> <span class="small">(registros: ${it.count})</span></li>`
+        `<li><b>${it.mes}-${it.año}</b> <span class="small">(registros: ${it.registros})</span></li>`
       ).join("")}</ul>`;
     }catch(e){
       console.error(e);
@@ -284,6 +255,7 @@
         return;
       }
 
+      // Detectar columnas (tolerante a tildes y espacios)
       const excelHeaders = Object.keys(raw[0] || {});
       const headerMap = {};
       excelHeaders.forEach(h => { headerMap[normalizeHeader(h)] = h; });
@@ -312,7 +284,8 @@
         return;
       }
 
-      const rowsToInsert = raw.map(r => {
+      // Convertir a formato que espera el backend
+      const rowsToSend = raw.map(r => {
         const seg = norm(r[colSeg]);
         const prov = norm(r[colProv]);
         const ruta = norm(r[colRuta]);
@@ -321,77 +294,62 @@
         if(!seg && !prov && !ruta && !est) return null;
 
         return {
-          año: anio,
-          mes: mes,
-          "Segmento Operación": seg,
-          "Proveedor": prov,
-          "Código Ruta": ruta,
-          "Estado": est
+          SegmentoOperacion: seg,
+          Proveedor: prov,
+          CodigoRuta: ruta,
+          Estado: est
         };
       }).filter(Boolean);
 
-      if(rowsToInsert.length === 0){
+      if(rowsToSend.length === 0){
         hideProgress();
         alert("No se encontraron filas válidas en el Excel.");
         return;
       }
 
-      // 1) DELETE existente para ese mes/año
-      setStatus(`<span class="warn">Reemplazando: eliminando datos anteriores de ${mesLabel}...</span>`);
+      setStatus(`<span class="warn">Enviando al servidor para reemplazar ${mesLabel}... (filas: ${rowsToSend.length})</span>`);
       showProgress(15);
 
-      const { error: delError } = await client
-        .from("sabana_rutas")
-        .delete()
-        .match({ año: anio, mes: mes });
+      // Enviar en chunks para evitar payload gigante (10mb)
+      // Ajuste: tu backend tiene express limit 10mb, por eso chunking.
+      const CHUNK = 300; // ajusta si necesitas (300 suele ser seguro)
+      const parts = chunkArray(rowsToSend, CHUNK);
 
-      if(delError){
-        hideProgress();
-        console.error(delError);
-        const msg = (delError.message || "").toLowerCase();
-        if(msg.includes("row-level security")){
-          setStatus(`<span class="err">❌ RLS bloqueó el DELETE.</span> Debes crear policy <b>DELETE</b> para sabana_rutas (role public).<br>${delError.message}`);
-          alert("No se pudo reemplazar: RLS bloqueó el DELETE.");
-        }else{
-          setStatus(`<span class="err">❌ Error eliminando:</span> ${delError.message}`);
-          alert("Error eliminando datos anteriores. Revisa consola.");
-        }
+      // Estrategia: 1er chunk lleva replace=true (borra), los demás solo insert.
+      // PERO como aún no existe el backend, aquí mandamos TODO con un solo replace por simplicidad.
+      // En el backend final haremos replace completo con body.rows grande o por lotes.
+      // Para no romper por tamaño: hacemos múltiples llamadas:
+      // - primera: /sabana/replace (borra e inserta chunk)
+      // - siguientes: /sabana/append (solo inserta) -> ESTE endpoint lo haremos luego.
+      // Hoy: lo dejamos en modo "solo 1 llamada" y avisamos si se pasa.
+
+      // ✅ Si cabe en 10mb, hacemos 1 sola llamada:
+      const payload = { anio, mes, rows: rowsToSend };
+
+      try{
+        await apiFetch("/sabana/replace", {
+          method: "POST",
+          body: JSON.stringify(payload)
+        });
+
+        showProgress(100);
+        setStatus(`<span class="ok">✔ Sábana ${mesLabel} cargada/reemplazada.</span><br>Filas enviadas: <b>${rowsToSend.length}</b>`);
+        alert(`✔ Sábana ${mesLabel} cargada/reemplazada correctamente`);
+
+        document.getElementById("fileExcel").value = "";
+        await cargarListadoSabanas();
         return;
+
+      }catch(err){
+        // Si falla por tamaño, dejamos mensaje claro (lo resolvemos en backend con append por lotes)
+        hideProgress();
+        console.error(err);
+        setStatus(
+          `<span class="err">❌ Error cargando la sábana:</span> ${err.message}<br>
+          <span class="small">Si el error es por tamaño (payload), en el siguiente paso hacemos el backend para insertar por lotes.</span>`
+        );
+        alert("Error cargando la sábana. Revisa el mensaje en pantalla / consola.");
       }
-
-      // 2) INSERT en lotes
-      setStatus(`<span class="warn">Insertando nueva sábana (${rowsToInsert.length} filas)...</span>`);
-      showProgress(25);
-
-      const BATCH = 500;
-      const chunks = chunkArray(rowsToInsert, BATCH);
-
-      let insertedTotal = 0;
-      for(let i=0;i<chunks.length;i++){
-        const pct = Math.round(25 + ((i / chunks.length) * 70));
-        showProgress(pct);
-
-        const { data, error } = await client
-          .from("sabana_rutas")
-          .insert(chunks[i]);
-
-        if(error){
-          hideProgress();
-          console.error(error);
-          setStatus(`<span class="err">❌ Error insertando lote ${i+1}/${chunks.length}:</span> ${error.message}`);
-          alert("Error cargando la sábana. Revisa consola.");
-          return;
-        }
-
-        insertedTotal += (data ? data.length : chunks[i].length);
-      }
-
-      showProgress(100);
-      setStatus(`<span class="ok">✔ Sábana ${mesLabel} cargada/reemplazada.</span><br>Filas insertadas: <b>${insertedTotal}</b>`);
-      alert(`✔ Sábana ${mesLabel} cargada/reemplazada correctamente`);
-
-      document.getElementById("fileExcel").value = "";
-      await cargarListadoSabanas();
 
     } catch (e){
       hideProgress();
@@ -403,6 +361,7 @@
 
   // ==========================
   // REPORTE: CERTIFICADOS VS SABANA
+  // (Listo en el HTML, endpoints se crean en backend luego)
   // ==========================
   async function generarReporteCruce(){
     try{
@@ -421,12 +380,17 @@
       setStatus(`<span class="warn">Generando reporte para ${mesLabel}...</span>`);
       showProgress(10);
 
-      // 1) traer sabana del mes/año
-      const sabana = await fetchAll(
-        "sabana_rutas",
-        'año, mes, "Segmento Operación", "Proveedor", "Código Ruta", "Estado"',
-        (q) => q.eq("año", anio).eq("mes", mes)
-      );
+      // 1) traer sabana del mes/año (endpoint lo haremos en backend)
+      let sabana = [];
+      try{
+        const respSab = await apiFetch(`/sabana/by-period?anio=${encodeURIComponent(anio)}&mes=${encodeURIComponent(mes)}`, { method:"GET" });
+        sabana = respSab.data || [];
+      }catch(e){
+        hideProgress();
+        setStatus(`<span class="err">❌ Aún falta crear el endpoint del backend:</span> <b>/sabana/by-period</b><br>${e.message}`);
+        alert("Falta crear endpoints de reporte en el backend. Seguimos en el siguiente paso.");
+        return;
+      }
 
       if(!sabana || sabana.length === 0){
         hideProgress();
@@ -437,12 +401,17 @@
 
       showProgress(35);
 
-      // 2) traer certificados del mes/año (APROBADO) para cruce
-      const certificadosAprob = await fetchAll(
-        "recepcion_certificados",
-        "fecha_creacion, año, mes, numero_de_contrato_oc, numero_ruta, responsable, estado, observacion_general",
-        (q) => q.eq("año", anio).eq("mes", mes).eq("estado", "APROBADO")
-      );
+      // 2) traer certificados APROBADOS del mes/año (endpoint lo haremos en backend)
+      let certificadosAprob = [];
+      try{
+        const respC = await apiFetch(`/certificados/aprobados?anio=${encodeURIComponent(anio)}&mes=${encodeURIComponent(mes)}`, { method:"GET" });
+        certificadosAprob = respC.data || [];
+      }catch(e){
+        hideProgress();
+        setStatus(`<span class="err">❌ Aún falta crear el endpoint del backend:</span> <b>/certificados/aprobados</b><br>${e.message}`);
+        alert("Falta crear endpoints de reporte en el backend. Seguimos en el siguiente paso.");
+        return;
+      }
 
       showProgress(55);
 
@@ -456,36 +425,29 @@
         if(!mapRuta[ruta]){
           mapRuta[ruta] = {
             fecha_creacion: fecha,
-            numero_de_contrato_oc: r.numero_de_contrato_oc ?? "",
-            responsable: r.responsable ?? "",
-            estado: r.estado ?? "",
-            observacion_general: r.observacion_general ?? ""
+            estado: r.estado ?? "APROBADO"
           };
         } else {
-          // quedarnos con la fecha menor (más antigua)
           const prev = (mapRuta[ruta].fecha_creacion || "");
           if(prev && fecha && fecha < prev){
             mapRuta[ruta].fecha_creacion = fecha;
-            mapRuta[ruta].numero_de_contrato_oc = r.numero_de_contrato_oc ?? "";
-            mapRuta[ruta].responsable = r.responsable ?? "";
-            mapRuta[ruta].estado = r.estado ?? "";
-            mapRuta[ruta].observacion_general = r.observacion_general ?? "";
+            mapRuta[ruta].estado = r.estado ?? "APROBADO";
           }
         }
       });
 
       // 3) hoja 1 cruce
       const cruce = sabana.map(s => {
-        const ruta = norm(s["Código Ruta"]);
+        const ruta = norm(s["Código Ruta"] ?? s.CodigoRuta ?? s.codigo_ruta ?? "");
         const info = mapRuta[ruta];
 
         return {
-          año: s.año,
-          mes: s.mes,
-          "Segmento Operación": s["Segmento Operación"],
-          "Proveedor": s["Proveedor"],
-          "Código Ruta": s["Código Ruta"],
-          "Estado (Sábana)": s["Estado"],
+          año: s.año ?? anio,
+          mes: (s.mes ?? mes).toString().toUpperCase(),
+          "Segmento Operación": s["Segmento Operación"] ?? s.SegmentoOperacion ?? s.segmento_operacion ?? "",
+          "Proveedor": s["Proveedor"] ?? s.Proveedor ?? "",
+          "Código Ruta": s["Código Ruta"] ?? s.CodigoRuta ?? s.codigo_ruta ?? "",
+          "Estado (Sábana)": s["Estado"] ?? s.Estado ?? "",
 
           CERTIFICADO_RECIBIDO: info ? "SI" : "NO",
           FECHA_RECIBIDO: info ? (info.fecha_creacion || "") : "",
@@ -520,7 +482,7 @@
       // 5) export excel
       const columnasCruce = [
         "año","mes","Segmento Operación","Proveedor","Código Ruta","Estado (Sábana)",
-        "CERTIFICADO_RECIBIDO","FECHA_RECIBIDO","ESTADO_CERTIFICADO","CONTRATO_OC","RESPONSABLE","OBSERVACION_GENERAL"
+        "CERTIFICADO_RECIBIDO","FECHA_RECIBIDO","ESTADO_CERTIFICADO"
       ];
 
       const columnasResumen = [
@@ -544,12 +506,7 @@
     }catch(e){
       hideProgress();
       console.error(e);
-      const msg = e?.message || e;
-      if((msg+"").toLowerCase().includes("row-level security")){
-        setStatus(`<span class="err">❌ RLS bloqueó el SELECT.</span> Debes permitir SELECT en recepcion_certificados y sabana_rutas (role public).<br>${msg}`);
-      }else{
-        setStatus(`<span class="err">❌ Error:</span> ${msg}`);
-      }
+      setStatus(`<span class="err">❌ Error:</span> ${e.message || e}`);
       alert("Error generando reporte. Revisa consola.");
     }
   }
@@ -562,4 +519,3 @@
 
 </body>
 </html>
-
