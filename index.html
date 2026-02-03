@@ -804,6 +804,14 @@ async function guardarDatos() {
   const rutaV = ruta.value.toUpperCase().trim();
   let obsGeneralV = (obsGeneral.value || "").toUpperCase().trim();
 
+  const segmentoV = segmento.value.toUpperCase().trim();
+
+if (!segmentoV) {
+  alert("❌ El campo SEGMENTO es obligatorio.");
+  segmento.focus();
+  return;
+}
+
   const maximoTransportadoRaw = document.getElementById("maximoTransportado").value;
   let maximoTransportadoV = (maximoTransportadoRaw === "" ? null : Number(maximoTransportadoRaw));
 
@@ -962,5 +970,6 @@ activarEstadoNoDocsCA();
 
 </body>
 </html>
+
 
 
