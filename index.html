@@ -109,7 +109,6 @@
     padding-top: 15px;
   }
 
-  /* ✅ 6 columnas */
   .row, .header-row {
     display: grid;
     grid-template-columns: 140px 1fr 1fr 90px 90px 1.2fr;
@@ -141,7 +140,6 @@
     text-transform: uppercase;
   }
 
-  /* ✅ Barra superior */
   .topbar {
     width:95%;
     max-width:1100px;
@@ -168,7 +166,7 @@
   }
 
   .btn-area {
-    background:#ffc107; /* amarillo */
+    background:#ffc107;
     color:#1f2a37;
     font-weight:bold;
   }
@@ -176,7 +174,6 @@
   .btn-operativo { background:#8a2be2; }
   .btn-financiero { background:#28a745; }
 
-  /* mini estado */
   .mini {
     margin-top: 10px;
     font-size: 13px;
@@ -187,7 +184,6 @@
     border: 1px solid #e5e7eb;
   }
 
-  /* ✅ Quitar flechitas */
   input.no-spin::-webkit-outer-spin-button,
   input.no-spin::-webkit-inner-spin-button {
     -webkit-appearance: none;
@@ -213,7 +209,6 @@
     justify-content: center;
   }
 
-  /* ✅ NUEVO: rojo claro cuando placa NO tiene documentos */
   .placa-sin-docs {
     background: #ffe6e6 !important;
     border: 2px solid #ff4d4d !important;
@@ -268,17 +263,31 @@
   </select>
   <div id="errorM" class="msg"></div>
 
+  <!-- ✅ UT -->
+  <label>UT:</label>
+  <select id="ut">
+    <option value="">Seleccione UT</option>
+  </select>
+  <div id="errorUT" class="msg"></div>
+
+  <!-- ✅ CONTRATO -->
   <label>Número de Contrato - OC:</label>
-  <input id="contrato" placeholder="Ejemplo: 143289, 8475946_2">
+  <select id="contrato" disabled>
+    <option value="">Seleccione contrato</option>
+  </select>
   <div id="errorC" class="msg"></div>
 
+  <!-- ✅ SEGMENTO (ANTES DE RUTA) -->
+  <label>Segmento:</label>
+  <select id="segmento" disabled>
+    <option value="">Seleccione segmento</option>
+  </select>
+  <div id="errorSegmento" class="msg"></div>
+
+  <!-- ✅ RUTA (DESPUÉS DE SEGMENTO) -->
   <label>Número de Ruta:</label>
   <input id="ruta" placeholder="Ejemplo: U-001">
   <div id="errorR" class="msg"></div>
-
-  <label>Segmento:</label>
-  <input id="segmento" placeholder="Ejemplo: 1, 1-CV">
-  <div id="errorSegmento" class="msg"></div>
 
   <!-- ✅ CONDUCTORES/AAR (MAX 5) - ANTES DE GENERAR DÍAS -->
   <div style="margin-top:25px;">
@@ -350,9 +359,6 @@ function irAreaOperativaConClave() {
 }
 
 let estadoSeleccionado = null;
-
-/* ✅ Ya NO mostramos "PLACA NO AUTORIZADA"
-   ✅ Solo dejamos validación de FORMATO */
 const formatoPlacaRegExp = /^[A-Z]{3}[0-9]{3}$/;
 
 function seleccionarEstado(estado) {
@@ -367,6 +373,106 @@ function seleccionarEstado(estado) {
 
   if (estado === 'APROBADO') btnAprobado.classList.add('selected');
   if (estado === 'RECHAZADO') btnRechazado.classList.add('selected');
+}
+
+/* =========================
+   ✅ TABLA UT -> CONTRATOS + SEGMENTOS (SIN AUTO-SELECCIÓN)
+========================= */
+const UT_MAP = [
+  { numero_de_contrato_oc: "151540", segmento: "1_SII_2025", ut: "UNIÓN TEMPORAL VET 2023" },
+  { numero_de_contrato_oc: "151546", segmento: "2_SII_2025", ut: "UNIÓN TEMPORAL VET 2023" },
+  { numero_de_contrato_oc: "151545", segmento: "3_SII_2025", ut: "UNIÓN TEMPORAL VET 2023" },
+  { numero_de_contrato_oc: "151790", segmento: "4_SII_2025", ut: "UNIÓN TEMPORAL LCT-2022" },
+  { numero_de_contrato_oc: "151791", segmento: "5_SII_2025", ut: "UNIÓN TEMPORAL VET 2023" },
+  { numero_de_contrato_oc: "151792", segmento: "6_SII_2025", ut: "UNIÓN TEMPORAL LCT-2022" },
+  { numero_de_contrato_oc: "152017", segmento: "7_SII_2025", ut: "UNIÓN TEMPORAL AMP 2022" },
+  { numero_de_contrato_oc: "151793", segmento: "8_SII_2025", ut: "UNIÓN TEMPORAL SRD TRANSPORTE DE PASAJEROS COLOMBIA" },
+  { numero_de_contrato_oc: "151795", segmento: "9_SII_2025", ut: "UNIÓN TEMPORAL LCT-2022" },
+  { numero_de_contrato_oc: "151939", segmento: "10_SII_2025", ut: "UNIÓN TEMPORAL SRD TRANSPORTE DE PASAJEROS COLOMBIA" },
+  { numero_de_contrato_oc: "151192", segmento: "11_SII_2025", ut: "UNIÓN TEMPORAL VET 2023" },
+  { numero_de_contrato_oc: "151544", segmento: "12_SII_2025", ut: "UNIÓN TEMPORAL VET 2023" },
+  { numero_de_contrato_oc: "151543", segmento: "13_SII_2025", ut: "UNIÓN TEMPORAL SRD TRANSPORTE DE PASAJEROS COLOMBIA" },
+  { numero_de_contrato_oc: "151796", segmento: "14_SII_2025", ut: "UNIÓN TEMPORAL BUS-ING" },
+  { numero_de_contrato_oc: "151940", segmento: "15_SII_2025", ut: "UNIÓN TEMPORAL ANDINO 2022" },
+  { numero_de_contrato_oc: "151941", segmento: "16_SII_2025", ut: "UNIÓN TEMPORAL ALIANZA BT" },
+  { numero_de_contrato_oc: "151193", segmento: "17_SII_2025", ut: "UNIÓN TEMPORAL VET 2023" },
+  { numero_de_contrato_oc: "151794", segmento: "18_SIII_2025", ut: "UNIÓN TEMPORAL SRD TRANSPORTE DE PASAJEROS COLOMBIA" },
+  { numero_de_contrato_oc: "151960", segmento: "19_SII_2025", ut: "UNIÓN TEMPORAL ANDINO 2022" },
+  { numero_de_contrato_oc: "151542", segmento: "20_SII_2025", ut: "UNIÓN TEMPORAL VET 2023" },
+  { numero_de_contrato_oc: "151797", segmento: "21_SII_2025", ut: "UNIÓN TEMPORAL MOVICOL" },
+  { numero_de_contrato_oc: "151541", segmento: "22_SII_2025", ut: "UNIÓN TEMPORAL SRD TRANSPORTE DE PASAJEROS COLOMBIA" },
+  { numero_de_contrato_oc: "151798", segmento: "23_SII_2025", ut: "UNIÓN TEMPORAL ALIANZA TRANSNACIONAL" },
+  { numero_de_contrato_oc: "8618407_1", segmento: "1_CV_2025", ut: "CONSORCIO RUTAS SEGURAS" },
+  { numero_de_contrato_oc: "8618407_2", segmento: "2_CV_2025", ut: "CONSORCIO RUTAS SEGURAS" }
+];
+
+function uniqueSorted(arr) {
+  return Array.from(new Set(arr)).sort((a,b) => a.localeCompare(b, "es", { sensitivity: "base" }));
+}
+
+function resetSelect(sel, placeholder) {
+  sel.innerHTML = `<option value="">${placeholder}</option>`;
+}
+
+function initUTDropdowns() {
+  const utSel = document.getElementById("ut");
+  const contratoSel = document.getElementById("contrato");
+  const segmentoSel = document.getElementById("segmento");
+
+  const uts = uniqueSorted(UT_MAP.map(x => x.ut));
+  resetSelect(utSel, "Seleccione UT");
+  uts.forEach(u => {
+    const opt = document.createElement("option");
+    opt.value = u;
+    opt.textContent = u;
+    utSel.appendChild(opt);
+  });
+
+  resetSelect(contratoSel, "Seleccione contrato");
+  resetSelect(segmentoSel, "Seleccione segmento");
+  contratoSel.disabled = true;
+  segmentoSel.disabled = true;
+
+  utSel.addEventListener("change", () => {
+    const utVal = (utSel.value || "").toString().trim();
+
+    resetSelect(contratoSel, "Seleccione contrato");
+    resetSelect(segmentoSel, "Seleccione segmento");
+
+    if (!utVal) {
+      contratoSel.disabled = true;
+      segmentoSel.disabled = true;
+      return;
+    }
+
+    const rows = UT_MAP.filter(x => x.ut === utVal);
+
+    const contratos = uniqueSorted(rows.map(x => x.numero_de_contrato_oc));
+    const segmentos = uniqueSorted(rows.map(x => x.segmento));
+
+    contratos.forEach(c => {
+      const opt = document.createElement("option");
+      opt.value = c;
+      opt.textContent = c;
+      contratoSel.appendChild(opt);
+    });
+
+    segmentos.forEach(s => {
+      const opt = document.createElement("option");
+      opt.value = s;
+      opt.textContent = s;
+      segmentoSel.appendChild(opt);
+    });
+
+    contratoSel.disabled = false;
+    segmentoSel.disabled = false;
+  });
+
+  /* ✅ IMPORTANTE:
+     - Ya NO autoseleccionamos segmento al cambiar contrato
+     - Ya NO autoseleccionamos contrato al cambiar segmento
+     Porque tú dices que puede haber varios segmentos por contrato.
+  */
 }
 
 /* =========================
@@ -414,7 +520,7 @@ function agregarFilaConductoresAar() {
 }
 
 /* =====================================================
-   ✅ CRUCE "EXISTE O NO"
+   CRUCE EXISTE
 ===================================================== */
 function normalizarTexto(t) {
   return (t ?? "").toString().trim().toUpperCase();
@@ -429,7 +535,7 @@ async function existeVehiculo(placa) {
     return j?.exists === true;
   } catch (e) {
     console.error("existeVehiculo error:", e);
-    return true; // no bloquea si hay error
+    return true;
   }
 }
 
@@ -459,7 +565,6 @@ async function existeAar(cedula) {
   }
 }
 
-/* ✅ CONDUCTORES/AAR -> Si NO existe, en ESTADO: NO TIENE DOCUMENTOS */
 function activarEstadoNoDocsCA() {
   for (let i = 1; i <= CA_MAX_FILAS; i++) {
     const inpC = document.getElementById(`conductor${i}`);
@@ -489,22 +594,16 @@ function activarEstadoNoDocsCA() {
 }
 
 /* =====================================================
-   ✅ PLACAS
-   - Si NO existe: input rojo claro
-   - OBS: "AAA123, XXX123 PLACA SIN DOCUMENTOS" (UNA sola frase)
+   PLACAS (TU MISMA LÓGICA)
 ===================================================== */
-
-/* Obtiene/normaliza la placa y deja vacío si no hay */
 function getPlacaNormalizada(inp) {
   return normalizarTexto(inp.value).replace(/[^A-Z0-9]/g, "");
 }
 
-/* Recalcula la observación de una fila según qué placas están "sin docs" */
 function recalcularObsFila(row) {
   const obsInp = row?.querySelector("input[data-obs]");
   if (!obsInp) return;
 
-  // placas marcadas sin docs (guardadas en dataset del input)
   const placas = [];
   row.querySelectorAll("input.placa").forEach(p => {
     const flag = p.dataset.sinDocs === "1";
@@ -512,9 +611,6 @@ function recalcularObsFila(row) {
     if (flag && placa) placas.push(placa);
   });
 
-  // Quitar cualquier texto previo del patrón "... PLACA SIN DOCUMENTOS" que hayamos puesto nosotros
-  // sin pisar otras notas del usuario:
-  // - quitamos solo la parte exacta que coincide con nuestro "TAG" guardado en row.dataset.noDocsTag
   const tagPrevio = row.dataset.noDocsTag || "";
   if (tagPrevio) {
     const actual = (obsInp.value || "").toString();
@@ -526,10 +622,8 @@ function recalcularObsFila(row) {
 
   if (placas.length === 0) return;
 
-  // Construye el nuevo TAG unido por coma:
   const tagNuevo = `${placas.join(", ")} PLACA SIN DOCUMENTOS`;
 
-  // Insertar sin duplicar como bloque separado con " | " si ya había texto
   const actual2 = (obsInp.value || "").toString().trim();
   if (!actual2) obsInp.value = tagNuevo;
   else obsInp.value = `${actual2} | ${tagNuevo}`;
@@ -537,21 +631,14 @@ function recalcularObsFila(row) {
   row.dataset.noDocsTag = tagNuevo;
 }
 
-/* Activa blur por placa:
-   - consulta backend
-   - pone/quita rojo claro
-   - marca dataset.sinDocs y dataset.placaEvaluada
-   - recalcula obs de fila para que quede unido */
 function activarPlacaNoDocs() {
   document.querySelectorAll(".placa").forEach(inp => {
     if (inp.dataset.noDocsBound === "1") return;
     inp.dataset.noDocsBound = "1";
 
     inp.addEventListener("input", function() {
-      // normaliza en tiempo real (sin mensajes rojos)
       const val = this.value.toUpperCase().replace(/[^A-Z0-9]/g, "");
       this.value = val;
-      // si edita, quitamos el rojo mientras aún no validamos
       this.classList.remove("placa-sin-docs");
     });
 
@@ -561,7 +648,6 @@ function activarPlacaNoDocs() {
 
       const placa = getPlacaNormalizada(inp);
 
-      // si quedó vacío, limpiar flags y recalcular
       if (!placa) {
         inp.dataset.sinDocs = "0";
         inp.dataset.placaEvaluada = "";
@@ -570,8 +656,6 @@ function activarPlacaNoDocs() {
         return;
       }
 
-      // si formato malo, no consulta, solo marca borde rojo (como ya hacías)
-      // (esto NO es "no autorizada", es formato)
       if (!formatoPlacaRegExp.test(placa)) {
         inp.dataset.sinDocs = "0";
         inp.dataset.placaEvaluada = placa;
@@ -586,7 +670,7 @@ function activarPlacaNoDocs() {
 
       if (!ok) {
         inp.dataset.sinDocs = "1";
-        inp.classList.add("placa-sin-docs");   // ✅ rojo claro
+        inp.classList.add("placa-sin-docs");
       } else {
         inp.dataset.sinDocs = "0";
         inp.classList.remove("placa-sin-docs");
@@ -598,12 +682,16 @@ function activarPlacaNoDocs() {
 }
 
 /* =========================
-   GENERAR DIAS (TU LOGICA)
+   GENERAR DIAS
 ========================= */
 function generarDias() {
   let y = year.value;
   let m = month.value;
-  let c = contrato.value.toUpperCase().trim();
+
+  let utV = (ut.value || "").toUpperCase().trim();
+  let c = (contrato.value || "").toUpperCase().trim();
+  let segV = (segmento.value || "").toUpperCase().trim();
+
   let r = ruta.value.toUpperCase().trim();
   let resp = responsable.value.toUpperCase().trim();
 
@@ -612,13 +700,17 @@ function generarDias() {
   errorM.innerHTML = "";
   errorR.innerHTML = "";
   errorC.innerHTML = "";
+  errorUT.innerHTML = "";
+  errorSegmento.innerHTML = "";
 
   let err = false;
 
   if (!resp) { errorResp.innerHTML = "Responsable obligatorio"; err = true; }
   if (!y) { errorY.innerHTML = "Año obligatorio"; err = true; }
   if (!m) { errorM.innerHTML = "Mes obligatorio"; err = true; }
+  if (!utV) { errorUT.innerHTML = "UT obligatoria"; err = true; }
   if (!c) { errorC.innerHTML = "Contrato / OC es obligatorio"; err = true; }
+  if (!segV) { errorSegmento.innerHTML = "Segmento obligatorio"; err = true; }
 
   let regRuta = /^[A-Z]-\d.+$/;
   if (r.length > 0 && !regRuta.test(r)) {
@@ -633,7 +725,6 @@ function generarDias() {
   if (err) return;
 
   responsable.value = resp;
-  contrato.value = c;
   ruta.value = r;
 
   const meses = {
@@ -687,9 +778,9 @@ function generarDias() {
     `;
   }
 
-  activarValidaciones();        // ✅ solo formato
+  activarValidaciones();
   activarValidacionOcupacionX();
-  activarPlacaNoDocs();         // ✅ rojo + obs unido
+  activarPlacaNoDocs();
 }
 
 function activarValidaciones() {
@@ -719,7 +810,7 @@ function activarValidacionOcupacionX() {
 }
 
 /* =========================
-   BACKEND HELPERS (TU LOGICA)
+   BACKEND HELPERS
 ========================= */
 async function pingBackend() {
   const el = document.getElementById("miniEstado");
@@ -768,9 +859,6 @@ async function postRegistros(payload) {
   return j;
 }
 
-/* =========================
-   ✅ leer enteros conductor/aar para guardar
-========================= */
 function getIntOrNull(id) {
   const el = document.getElementById(id);
   if (!el) return null;
@@ -788,7 +876,7 @@ function getTextOrNull(id) {
 }
 
 /* =========================
-   ✅ GUARDAR (queda igual: manda conductores/aar en JSON)
+   GUARDAR (igual + ut)
 ========================= */
 async function guardarDatos() {
   if (!estadoSeleccionado) {
@@ -800,28 +888,26 @@ async function guardarDatos() {
   const responsableV = responsable.value.toUpperCase().trim();
   const yearV = year.value;
   const monthV = month.value.toUpperCase().trim();
-  const contratoV = contrato.value.toUpperCase().trim();
+  const utV = (ut.value || "").toUpperCase().trim();
+  const contratoV = (contrato.value || "").toUpperCase().trim();
+  const segmentoV = (segmento.value || "").toUpperCase().trim();
   const rutaV = ruta.value.toUpperCase().trim();
   let obsGeneralV = (obsGeneral.value || "").toUpperCase().trim();
 
-  const segmentoV = segmento.value.toUpperCase().trim();
-
-if (!segmentoV) {
-  alert("❌ El campo SEGMENTO es obligatorio.");
-  segmento.focus();
-  return;
-}
+  if (!utV) { alert("❌ El campo UT es obligatorio."); ut.focus(); return; }
+  if (!contratoV) { alert("❌ El campo CONTRATO es obligatorio."); contrato.focus(); return; }
+  if (!segmentoV) { alert("❌ El campo SEGMENTO es obligatorio."); segmento.focus(); return; }
 
   const maximoTransportadoRaw = document.getElementById("maximoTransportado").value;
   let maximoTransportadoV = (maximoTransportadoRaw === "" ? null : Number(maximoTransportadoRaw));
 
   if (maximoTransportadoRaw === "" || !Number.isFinite(maximoTransportadoV)) {
-  alert("❌ El campo MÁXIMO TRANSPORTADO es obligatorio.");
-  document.getElementById("maximoTransportado").focus();
-  return;
-}
+    alert("❌ El campo MÁXIMO TRANSPORTADO es obligatorio.");
+    document.getElementById("maximoTransportado").focus();
+    return;
+  }
 
-  if (!responsableV || !yearV || !monthV || !contratoV || !rutaV) {
+  if (!responsableV || !yearV || !monthV || !rutaV) {
     alert("TODOS LOS CAMPOS PRINCIPALES SON OBLIGATORIOS (incluyendo Responsable).");
     return;
   }
@@ -833,7 +919,6 @@ if (!segmentoV) {
       errorPlacaEncontrado = true;
       inp.style.border = '2px solid red';
     } else {
-      // si está marcado sin docs, mantenemos su estilo rojo claro
       if (!inp.classList.contains("placa-sin-docs")) inp.style.border = '1px solid #ccc';
     }
   });
@@ -853,7 +938,6 @@ if (!segmentoV) {
     const idGrupoV = await getNextIdGrupo();
     let registros = [];
 
-    // ✅ lee una sola vez (mismo valor para todos los días)
     const conductor1V = getIntOrNull("conductor1");
     const conductor2V = getIntOrNull("conductor2");
     const conductor3V = getIntOrNull("conductor3");
@@ -866,7 +950,6 @@ if (!segmentoV) {
     const aar4V = getIntOrNull("aar4");
     const aar5V = getIntOrNull("aar5");
 
-    // ✅ estados (NO TIENE DOCUMENTOS o vacío)
     const estadoconductor1V = getTextOrNull("estado_conductor1");
     const estadoconductor2V = getTextOrNull("estado_conductor2");
     const estadoconductor3V = getTextOrNull("estado_conductor3");
@@ -904,6 +987,7 @@ if (!segmentoV) {
         id_grupo: idGrupoV,
         año: parseInt(yearV, 10),
         mes: monthV,
+        ut: utV,
         numero_ruta: rutaV,
         segmento: segmentoV,
         numero_de_contrato_oc: contratoV,
@@ -918,7 +1002,6 @@ if (!segmentoV) {
         responsable: responsableV,
         estado: estadoSeleccionado,
 
-        // ✅ cédulas
         conductor1: conductor1V,
         conductor2: conductor2V,
         conductor3: conductor3V,
@@ -930,7 +1013,6 @@ if (!segmentoV) {
         aar4: aar4V,
         aar5: aar5V,
 
-        // ✅ estados
         estadoconductor1: estadoconductor1V,
         estadoconductor2: estadoconductor2V,
         estadoconductor3: estadoconductor3V,
@@ -973,13 +1055,8 @@ pingBackend();
 activarSoloEnterosEnInputsCA();
 actualizarBotonAddCA();
 activarEstadoNoDocsCA();
+initUTDropdowns();
 </script>
 
 </body>
 </html>
-
-
-
-
-
-
