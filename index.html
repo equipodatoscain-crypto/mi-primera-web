@@ -620,9 +620,9 @@ function generarDias() {
   if (!m) { errorM.innerHTML = "Mes obligatorio"; err = true; }
   if (!c) { errorC.innerHTML = "Contrato / OC es obligatorio"; err = true; }
 
-  let regRuta = /^[A-Z]-.+$/;
+  let regRuta = /^[A-Z]-\d.+$/;
   if (r.length > 0 && !regRuta.test(r)) {
-    errorR.innerHTML = "Formato inválido. Debe ser: Letra - (y luego cualquier cosa). Ej: U-001";
+    errorR.innerHTML = "Formato inválido. Debe iniciar con LETRA-NÚMERO (Ej: U-001, J-445445-V1).";
     err = true;
   }
   if (r.length === 0) {
@@ -977,6 +977,7 @@ activarEstadoNoDocsCA();
 
 </body>
 </html>
+
 
 
 
