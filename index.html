@@ -815,6 +815,12 @@ if (!segmentoV) {
   const maximoTransportadoRaw = document.getElementById("maximoTransportado").value;
   let maximoTransportadoV = (maximoTransportadoRaw === "" ? null : Number(maximoTransportadoRaw));
 
+  if (maximoTransportadoRaw === "" || !Number.isFinite(maximoTransportadoV)) {
+  alert("❌ El campo MÁXIMO TRANSPORTADO es obligatorio.");
+  document.getElementById("maximoTransportado").focus();
+  return;
+}
+
   if (!responsableV || !yearV || !monthV || !contratoV || !rutaV) {
     alert("TODOS LOS CAMPOS PRINCIPALES SON OBLIGATORIOS (incluyendo Responsable).");
     return;
@@ -971,6 +977,7 @@ activarEstadoNoDocsCA();
 
 </body>
 </html>
+
 
 
 
