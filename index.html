@@ -488,9 +488,9 @@ function initUTDropdowns() {
 }
 
 /* =========================
-   CONDUCTORES/AAR (MAX 5)
+   CONDUCTORES/AAR (MAX 10)
 ========================= */
-const CA_MAX_FILAS = 5;
+const CA_MAX_FILAS = 10;
 let caFilaCount = 3;
 
 function activarSoloEnterosEnInputsCA() {
@@ -955,24 +955,44 @@ async function guardarDatos() {
     const conductor3V = getIntOrNull("conductor3");
     const conductor4V = getIntOrNull("conductor4");
     const conductor5V = getIntOrNull("conductor5");
+    const conductor5V = getIntOrNull("conductor6");
+    const conductor5V = getIntOrNull("conductor7");
+    const conductor5V = getIntOrNull("conductor8");
+    const conductor5V = getIntOrNull("conductor9");
+    const conductor5V = getIntOrNull("conductor10");
 
     const aar1V = getIntOrNull("aar1");
     const aar2V = getIntOrNull("aar2");
     const aar3V = getIntOrNull("aar3");
     const aar4V = getIntOrNull("aar4");
     const aar5V = getIntOrNull("aar5");
+    const aar5V = getIntOrNull("aar6");
+    const aar5V = getIntOrNull("aar7");
+    const aar5V = getIntOrNull("aar8");
+    const aar5V = getIntOrNull("aar9");
+    const aar5V = getIntOrNull("aar10");
 
     const estadoconductor1V = getTextOrNull("estado_conductor1");
     const estadoconductor2V = getTextOrNull("estado_conductor2");
     const estadoconductor3V = getTextOrNull("estado_conductor3");
     const estadoconductor4V = getTextOrNull("estado_conductor4");
     const estadoconductor5V = getTextOrNull("estado_conductor5");
-
+    const estadoconductor5V = getTextOrNull("estado_conductor6");
+    const estadoconductor5V = getTextOrNull("estado_conductor7");
+    const estadoconductor5V = getTextOrNull("estado_conductor8");
+    const estadoconductor5V = getTextOrNull("estado_conductor9");
+    const estadoconductor5V = getTextOrNull("estado_conductor10");
+   
     const estadoaar1V = getTextOrNull("estado_aar1");
     const estadoaar2V = getTextOrNull("estado_aar2");
     const estadoaar3V = getTextOrNull("estado_aar3");
     const estadoaar4V = getTextOrNull("estado_aar4");
     const estadoaar5V = getTextOrNull("estado_aar5");
+    const estadoaar5V = getTextOrNull("estado_aar6");
+    const estadoaar5V = getTextOrNull("estado_aar7");
+    const estadoaar5V = getTextOrNull("estado_aar8");
+    const estadoaar5V = getTextOrNull("estado_aar9");
+    const estadoaar5V = getTextOrNull("estado_aar10");
 
     document.querySelectorAll(".row").forEach(row => {
       let fechaTexto = row.querySelector("b")?.innerText;
@@ -1072,6 +1092,7 @@ initUTDropdowns();
 
 </body>
 </html>
+
 
 
 
